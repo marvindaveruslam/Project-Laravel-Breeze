@@ -60,10 +60,13 @@ const handleLogout = () => {
         }
     });
 };
+
+// Tahun saat ini untuk footer
+const currentYear = new Date().getFullYear();
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100 flex">
+    <div class="min-h-screen bg-gray-100 flex flex-col">
         <!-- Sidebar -->
         <div class="w-64 bg-white shadow-lg flex flex-col fixed h-full">
             <!-- Logo -->
@@ -133,7 +136,7 @@ const handleLogout = () => {
         </div>
 
         <!-- Main Content -->
-        <div class="ml-64 flex-1">
+        <div class="ml-64 flex-1 flex flex-col min-h-screen">
             <!-- Header -->
             <div class="bg-white shadow-sm">
                 <div class="px-6 py-4">
@@ -143,12 +146,33 @@ const handleLogout = () => {
             </div>
 
             <!-- Content -->
-            <div class="p-6">
-                <!-- SLOT UNTUK KONTEN HALAMAN -->
+            <div class="flex-1 p-6">
                 <slot>
-                    <!-- KOSONG - SERAHKAN KE HALAMAN MASING-MASING -->
+                   
                 </slot>
             </div>
+
+            <!-- FOOTER -->
+            <footer class="bg-white border-t border-gray-200 mt-auto">
+                <div class="px-6 py-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600">
+                        <div>
+                            &copy; {{ currentYear }}  All rights reserved.
+                        </div>
+                        <div class="flex space-x-4 mt-2 sm:mt-0">
+                            <Link href="#" class="hover:text-gray-900 transition-colors">
+                                Privacy Policy
+                            </Link>
+                            <Link href="#" class="hover:text-gray-900 transition-colors">
+                                Terms of Service
+                            </Link>
+                            <Link href="#" class="hover:text-gray-900 transition-colors">
+                                Contact
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
 </template>
