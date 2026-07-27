@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->string('nis')->unique();
             $table->string('nama');
-            $table->enum('jenis_kelamin', ['L', 'P']);
+            $table->tinyInteger('jenis_kelamin');
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir');
             $table->text('alamat');

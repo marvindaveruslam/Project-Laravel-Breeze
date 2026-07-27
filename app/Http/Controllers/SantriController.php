@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Santri;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -13,7 +14,9 @@ class SantriController extends Controller
      */
     public function index()
     {
-        $santris = Santri::with('kelas')->get();
+        $santris = Santri::with('kelas')
+            ->latest()
+            ->get();
 
         return Inertia::render('Santri/Index', [
             'santris' => $santris,
@@ -25,7 +28,13 @@ class SantriController extends Controller
      */
     public function create()
     {
-        //
+        $kelas = Kelas::orderBy('tingkat')
+            ->orderBy('nama_kelas')
+            ->get();
+
+        return Inertia::render('Santri/Create', [
+            'kelas' => $kelas,
+        ]);
     }
 
     /**
@@ -33,7 +42,23 @@ class SantriController extends Controller
      */
     public function store(Request $request)
     {
-        //
+                $validated = $request->validate([
+            'nis'             => 'required|string|max:50|unique:santris,nis',
+            'nama'            => 'required|string|max:255',
+            'jenis_kelamin'   => 'required|in:1,2',
+            'tempat_lahir'    => 'required|string|max:255',
+            'tanggal_lahir'   => 'required|date',
+            'alamat'          => 'required|string',
+            'no_hp'           => 'nullable|string|max:20',
+            'kelas_id'        => 'required|exists:kelas,id',
+        ]);
+
+        Santri::create($validated);
+
+        return redirect()
+            ->route('santri.index')
+            ->with('success', 'Data santri berhasil ditambahkan.');
+
     }
 
     /**
@@ -41,7 +66,11 @@ class SantriController extends Controller
      */
     public function show(Santri $santri)
     {
-        //
+        $santri->load('kelas');
+
+        return Inertia::render('Santri/Show', [
+            'santri' => $santri,
+        ]);
     }
 
     /**
@@ -49,7 +78,14 @@ class SantriController extends Controller
      */
     public function edit(Santri $santri)
     {
-        //
+        $kelas = Kelas::orderBy('tingkat')
+            ->orderBy('nama_kelas')
+            ->get();
+
+        return Inertia::render('Santri/Edit', [
+            'santri' => $santri,
+            'kelas'  => $kelas,
+        ]);
     }
 
     /**
@@ -57,7 +93,23 @@ class SantriController extends Controller
      */
     public function update(Request $request, Santri $santri)
     {
-        //
+        $validated = $request->validate([
+            'nis'             => 'required|string|max:50|unique:santris,nis,' . $santri->id,
+            'nama'            => 'required|string|max:255',
+            'jenis_kelamin'   => 'required|in:1,2',
+            'tempat_lahir'    => 'required|string|max:255',
+            'tanggal_lahir'   => 'required|date',
+            'alamat'          => 'required|string',
+            'no_hp'           => 'nullable|string|max:20',
+            'kelas_id'        => 'required|exists:kelas,id',
+        ]);
+
+        $santri->update($validated);
+
+        return redirect()
+            ->route('santri.index')
+            ->with('success', 'Data santri berhasil diperbarui.');
+
     }
 
     /**
@@ -65,6 +117,10 @@ class SantriController extends Controller
      */
     public function destroy(Santri $santri)
     {
-        //
+        $santri->delete();
+
+        return redirect()
+            ->route('santri.index')
+            ->with('success', 'Data santri berhasil dihapus.');
     }
 }
