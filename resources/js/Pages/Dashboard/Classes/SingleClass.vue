@@ -1,96 +1,37 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import { router } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head } from '@inertiajs/vue3';
 
+const props = defineProps({
+    kelas: Array,
+    flash: Object
+});
+
 // ============================================
-// DATA KELAS
+// DATA REAKTIF
 // ============================================
-const classes = ref([
-    { 
-        id: 1, 
-        name: 'Kelas 1A', 
-        waliKelas: 'Ustadz Ahmad',
-        totalSantri: 28,
-        aktif: 24,
-        nonAktif: 4,
-        tahunAjaran: '2025/2026',
-        ruangan: 'Ruang 101',
-        status: 'Aktif'
-    },
-    { 
-        id: 2, 
-        name: 'Kelas 1B', 
-        waliKelas: 'Ustadzah Fatimah',
-        totalSantri: 26,
-        aktif: 22,
-        nonAktif: 4,
-        tahunAjaran: '2025/2026',
-        ruangan: 'Ruang 102',
-        status: 'Aktif'
-    },
-    { 
-        id: 3, 
-        name: 'Kelas 2A', 
-        waliKelas: 'Ustadz Budi',
-        totalSantri: 30,
-        aktif: 26,
-        nonAktif: 4,
-        tahunAjaran: '2025/2026',
-        ruangan: 'Ruang 201',
-        status: 'Aktif'
-    },
-    { 
-        id: 4, 
-        name: 'Kelas 2B', 
-        waliKelas: 'Ustadzah Siti',
-        totalSantri: 27,
-        aktif: 23,
-        nonAktif: 4,
-        tahunAjaran: '2025/2026',
-        ruangan: 'Ruang 202',
-        status: 'Aktif'
-    },
-    { 
-        id: 5, 
-        name: 'Kelas 3A', 
-        waliKelas: 'Ustadz Rahman',
-        totalSantri: 29,
-        aktif: 25,
-        nonAktif: 4,
-        tahunAjaran: '2025/2026',
-        ruangan: 'Ruang 301',
-        status: 'Aktif'
-    },
-    { 
-        id: 6, 
-        name: 'Kelas 3B', 
-        waliKelas: 'Ustadzah Aisyah',
-        totalSantri: 28,
-        aktif: 24,
-        nonAktif: 4,
-        tahunAjaran: '2025/2026',
-        ruangan: 'Ruang 302',
-        status: 'Aktif'
-    },
-]);
+const classes = ref(props.kelas || []);
 
 // ============================================
 // STATISTIK OTOMATIS
 // ============================================
 const stats = computed(() => {
     const totalKelas = classes.value.length;
-    const totalSantri = classes.value.reduce((sum, cls) => sum + cls.totalSantri, 0);
-    const totalAktif = classes.value.reduce((sum, cls) => sum + cls.aktif, 0);
-    const totalNonAktif = classes.value.reduce((sum, cls) => sum + cls.nonAktif, 0);
-    const rataRata = Math.round(totalSantri / totalKelas);
+    const totalSantri = classes.value.reduce((sum, cls) => sum + (cls.santris_count || 0), 0);
+    const rataRata = totalKelas > 0 ? Math.round(totalSantri / totalKelas) : 0;
     
-    return {
-        totalKelas,
-        totalSantri,
-        totalAktif,
-        totalNonAktif,
-        rataRata
+    // Hitung santri aktif & non-aktif (jika ada field status)
+    const totalAktif = classes.value.reduce((sum, cls) => sum + (cls.aktif || 0), 0);
+    const totalNonAktif = classes.value.reduce((sum, cls) => sum + (cls.non_aktif || 0), 0);
+    
+    return { 
+        totalKelas, 
+        totalSantri, 
+        totalAktif, 
+        totalNonAktif, 
+        rataRata 
     };
 });
 
@@ -103,17 +44,12 @@ const itemsPerPage = ref(5);
 const showModal = ref(false);
 const isEdit = ref(false);
 const currentId = ref(null);
+const isLoading = ref(false);
 
-// Form data
+// Form data (sesuai dengan field di database Anda)
 const formData = ref({
-    name: '',
-    waliKelas: '',
-    totalSantri: 0,
-    aktif: 0,
-    nonAktif: 0,
-    tahunAjaran: '2025/2026',
-    ruangan: '',
-    status: 'Aktif'
+    nama_kelas: '',
+    tingkat: '',
 });
 
 // ============================================
@@ -125,9 +61,8 @@ const filteredClasses = computed(() => {
     }
     const query = searchQuery.value.toLowerCase();
     return classes.value.filter(item => 
-        item.name.toLowerCase().includes(query) ||
-        item.waliKelas.toLowerCase().includes(query) ||
-        item.ruangan.toLowerCase().includes(query)
+        item.nama_kelas?.toLowerCase().includes(query) ||
+        item.tingkat?.toLowerCase().includes(query)
     );
 });
 
@@ -142,18 +77,20 @@ const totalPages = computed(() => {
 });
 
 // ============================================
+// HELPERS
+// ============================================
+const getInitials = (name) => {
+    if (!name) return 'K';
+    return name.split(' ').map(word => word[0]).join('').toUpperCase();
+};
+
+// ============================================
 // FUNGSI CRUD
 // ============================================
 const resetForm = () => {
     formData.value = {
-        name: '',
-        waliKelas: '',
-        totalSantri: 0,
-        aktif: 0,
-        nonAktif: 0,
-        tahunAjaran: '2025/2026',
-        ruangan: '',
-        status: 'Aktif'
+        nama_kelas: '',
+        tingkat: '',
     };
 };
 
@@ -169,43 +106,66 @@ const editClass = (id) => {
     if (item) {
         isEdit.value = true;
         currentId.value = id;
-        formData.value = { ...item };
+        formData.value = {
+            nama_kelas: item.nama_kelas,
+            tingkat: item.tingkat,
+        };
         showModal.value = true;
     }
 };
 
 const saveClass = () => {
-    if (!formData.value.name || !formData.value.waliKelas || !formData.value.ruangan) {
-        alert('⚠️ Nama Kelas, Wali Kelas, dan Ruangan harus diisi!');
+    if (!formData.value.nama_kelas || !formData.value.tingkat) {
+        alert('⚠️ Nama Kelas dan Tingkat harus diisi!');
         return;
     }
 
+    isLoading.value = true;
+
     if (isEdit.value) {
-        const index = classes.value.findIndex(c => c.id === currentId.value);
-        if (index !== -1) {
-            classes.value[index] = {
-                id: currentId.value,
-                ...formData.value
-            };
-        }
+        // ✅ EDIT: Kirim PUT request
+        router.put(`/kelas/${currentId.value}`, formData.value, {
+            onSuccess: () => {
+                showModal.value = false;
+                resetForm();
+                isLoading.value = false;
+            },
+            onError: (errors) => {
+                console.error('Error update:', errors);
+                isLoading.value = false;
+                alert('⚠️ Gagal mengupdate data!');
+            }
+        });
     } else {
-        const maxId = classes.value.reduce((max, item) => Math.max(max, item.id), 0);
-        classes.value.push({
-            id: maxId + 1,
-            ...formData.value
+        // ✅ TAMBAH: Kirim POST request
+        router.post('/kelas', formData.value, {
+            onSuccess: () => {
+                showModal.value = false;
+                resetForm();
+                isLoading.value = false;
+            },
+            onError: (errors) => {
+                console.error('Error save:', errors);
+                isLoading.value = false;
+                alert('⚠️ Gagal menyimpan data!');
+            }
         });
     }
-
-    showModal.value = false;
-    resetForm();
 };
 
 const deleteClass = (id) => {
     if (confirm('⚠️ Yakin ingin menghapus kelas ini?')) {
-        const index = classes.value.findIndex(c => c.id === id);
-        if (index !== -1) {
-            classes.value.splice(index, 1);
-        }
+        isLoading.value = true;
+        router.delete(`/kelas/${id}`, {
+            onSuccess: () => {
+                isLoading.value = false;
+            },
+            onError: (errors) => {
+                console.error('Error delete:', errors);
+                isLoading.value = false;
+                alert('⚠️ Gagal menghapus data!');
+            }
+        });
     }
 };
 
@@ -221,17 +181,11 @@ const goToPage = (page) => {
 };
 
 // ============================================
-// HELPERS
+// WATCH UNTUK UPDATE DATA
 // ============================================
-const getStatusBadge = (status) => {
-    return status === 'Aktif' 
-        ? 'bg-green-100 text-green-700' 
-        : 'bg-red-100 text-red-700';
-};
-
-const getInitials = (name) => {
-    return name.split(' ').map(word => word[0]).join('').toUpperCase();
-};
+watch(() => props.kelas, (newData) => {
+    classes.value = newData || [];
+});
 </script>
 
 <template>
@@ -243,14 +197,15 @@ const getInitials = (name) => {
         :header-subtitle="`Total Kelas: ${stats.totalKelas} | Total Santri: ${stats.totalSantri}`"
     >
         <!-- ========================================== -->
-        <!-- STATISTIK CARDS                           -->
+        <!-- STATISTIK CARDS (4 KARTU)                  -->
         <!-- ========================================== -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-            <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Kelas</p>
+                        <p class="text-sm text-gray-500 font-medium">Total Kelas</p>
                         <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.totalKelas }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Semua kelas aktif</p>
                     </div>
                     <div class="bg-blue-100 p-3 rounded-lg">
                         <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,11 +215,12 @@ const getInitials = (name) => {
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Santri</p>
+                        <p class="text-sm text-gray-500 font-medium">Total Santri</p>
                         <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.totalSantri }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Seluruh santri</p>
                     </div>
                     <div class="bg-purple-100 p-3 rounded-lg">
                         <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,43 +230,31 @@ const getInitials = (name) => {
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Santri Aktif</p>
-                        <p class="text-2xl font-bold text-green-600 mt-1">{{ stats.totalAktif }}</p>
+                        <p class="text-sm text-gray-500 font-medium">Rata-rata/Kelas</p>
+                        <p class="text-2xl font-bold text-green-600 mt-1">{{ stats.rataRata }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Santri per kelas</p>
                     </div>
                     <div class="bg-green-100 p-3 rounded-lg">
                         <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                         </svg>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Santri Non-Aktif</p>
-                        <p class="text-2xl font-bold text-red-600 mt-1">{{ stats.totalNonAktif }}</p>
-                    </div>
-                    <div class="bg-red-100 p-3 rounded-lg">
-                        <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Rata-rata/Kelas</p>
-                        <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.rataRata }}</p>
+                        <p class="text-sm text-gray-500 font-medium">Tingkat</p>
+                        <p class="text-2xl font-bold text-gray-800 mt-1">{{ stats.totalKelas }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Jenjang pendidikan</p>
                     </div>
                     <div class="bg-yellow-100 p-3 rounded-lg">
                         <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                     </div>
                 </div>
@@ -335,13 +279,14 @@ const getInitials = (name) => {
                         <input 
                             v-model="searchQuery"
                             type="text" 
-                            placeholder="Cari kelas atau wali kelas..." 
+                            placeholder="Cari kelas atau tingkat..." 
                             class="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48"
                         >
                     </div>
                     <button 
                         @click="addClass"
-                        class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1"
+                        :disabled="isLoading"
+                        class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1 disabled:opacity-50"
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -358,53 +303,53 @@ const getInitials = (name) => {
                         <tr>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Kelas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wali Kelas</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ruangan</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktif</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Non-Aktif</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tingkat</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Santri</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dibuat</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         <tr v-for="(item, index) in paginatedClasses" :key="item.id" class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4 text-sm text-gray-500">{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
-                            <td class="px-6 py-4 text-sm font-medium text-gray-800">{{ item.name }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-800">
                                 <div class="flex items-center gap-2">
                                     <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                        {{ getInitials(item.waliKelas) }}
+                                        {{ getInitials(item.nama_kelas) }}
                                     </div>
-                                    {{ item.waliKelas }}
+                                    {{ item.nama_kelas }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-600">{{ item.ruangan }}</td>
-                            <td class="px-6 py-4 text-sm font-medium text-gray-800">{{ item.totalSantri }}</td>
-                            <td class="px-6 py-4 text-sm text-green-600">{{ item.aktif }}</td>
-                            <td class="px-6 py-4 text-sm text-red-600">{{ item.nonAktif }}</td>
                             <td class="px-6 py-4">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full" :class="getStatusBadge(item.status)">
-                                    {{ item.status }}
+                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700">
+                                    {{ item.tingkat }}
                                 </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-800">
+                                {{ item.santris_count || 0 }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ new Date(item.created_at).toLocaleDateString('id-ID') }}
                             </td>
                             <td class="px-6 py-4">
                                 <button 
                                     @click="editClass(item.id)"
-                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-2"
+                                    :disabled="isLoading"
+                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium mr-2 disabled:opacity-50"
                                 >
                                     Edit
                                 </button>
                                 <button 
                                     @click="deleteClass(item.id)"
-                                    class="text-red-600 hover:text-red-800 text-sm font-medium"
+                                    :disabled="isLoading"
+                                    class="text-red-600 hover:text-red-800 text-sm font-medium disabled:opacity-50"
                                 >
                                     Hapus
                                 </button>
                             </td>
                         </tr>
                         <tr v-if="paginatedClasses.length === 0">
-                            <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                 <svg class="h-12 w-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -451,7 +396,7 @@ const getInitials = (name) => {
         </div>
 
         <!-- ========================================== -->
-        <!-- INFO CARD TAMBAHAN                        -->
+        <!-- INFO CARD TAMBAHAN                         -->
         <!-- ========================================== -->
         <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
@@ -462,8 +407,8 @@ const getInitials = (name) => {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs text-blue-700 font-medium">Tahun Ajaran</p>
-                        <p class="text-sm font-bold text-blue-800">2025/2026</p>
+                        <p class="text-xs text-blue-700 font-medium">Total Kelas</p>
+                        <p class="text-sm font-bold text-blue-800">{{ stats.totalKelas }} Kelas</p>
                     </div>
                 </div>
             </div>
@@ -476,8 +421,8 @@ const getInitials = (name) => {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs text-green-700 font-medium">Total Wali Kelas</p>
-                        <p class="text-sm font-bold text-green-800">{{ stats.totalKelas }} Guru</p>
+                        <p class="text-xs text-green-700 font-medium">Total Santri</p>
+                        <p class="text-sm font-bold text-green-800">{{ stats.totalSantri }} Santri</p>
                     </div>
                 </div>
             </div>
@@ -490,7 +435,7 @@ const getInitials = (name) => {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs text-purple-700 font-medium">Rata-rata Santri/Kelas</p>
+                        <p class="text-xs text-purple-700 font-medium">Rata-rata/Kelas</p>
                         <p class="text-sm font-bold text-purple-800">{{ stats.rataRata }} Santri</p>
                     </div>
                 </div>
@@ -519,7 +464,7 @@ const getInitials = (name) => {
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nama Kelas *</label>
                         <input 
-                            v-model="formData.name"
+                            v-model="formData.nama_kelas"
                             type="text" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Contoh: Kelas 1A"
@@ -527,73 +472,18 @@ const getInitials = (name) => {
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Wali Kelas *</label>
-                        <input 
-                            v-model="formData.waliKelas"
-                            type="text" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Nama wali kelas"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ruangan *</label>
-                        <input 
-                            v-model="formData.ruangan"
-                            type="text" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Contoh: Ruang 101"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Total Santri</label>
-                        <input 
-                            v-model.number="formData.totalSantri"
-                            type="number" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Jumlah total santri"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Santri Aktif</label>
-                        <input 
-                            v-model.number="formData.aktif"
-                            type="number" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Jumlah santri aktif"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Santri Non-Aktif</label>
-                        <input 
-                            v-model.number="formData.nonAktif"
-                            type="number" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Jumlah santri non-aktif"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Ajaran</label>
-                        <input 
-                            v-model="formData.tahunAjaran"
-                            type="text" 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Contoh: 2025/2026"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tingkat *</label>
                         <select 
-                            v-model="formData.status"
+                            v-model="formData.tingkat"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            <option value="Aktif">Aktif</option>
-                            <option value="Non-Aktif">Non-Aktif</option>
+                            <option value="">Pilih Tingkat</option>
+                            <option value="1">Tingkat 1</option>
+                            <option value="2">Tingkat 2</option>
+                            <option value="3">Tingkat 3</option>
+                            <option value="4">Tingkat 4</option>
+                            <option value="5">Tingkat 5</option>
+                            <option value="6">Tingkat 6</option>
                         </select>
                     </div>
                 </div>
@@ -602,14 +492,17 @@ const getInitials = (name) => {
                 <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
                     <button 
                         @click="closeModal"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                        :disabled="isLoading"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
                     >
                         Batal
                     </button>
                     <button 
                         @click="saveClass"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+                        :disabled="isLoading"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
+                        <div v-if="isLoading" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                         {{ isEdit ? 'Update' : 'Simpan' }}
                     </button>
                 </div>
