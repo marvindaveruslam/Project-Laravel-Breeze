@@ -13,10 +13,12 @@ class KelasController extends Controller
      */
     public function index()
     {
-        $kelas = Kelas::with('santris')->get();
+        $kelas = Kelas::withCount('santris')
+              ->latest()
+              ->get();
 
         return Inertia::render('Kelas/Index', [
-            'kelas' => $kelas,
+            'kelas' => $kelas
         ]);
     }
 
@@ -25,7 +27,7 @@ class KelasController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('Kelas/Create');
     }
 
     /**
@@ -33,7 +35,16 @@ class KelasController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'nama_kelas' => 'required|string|max:100',
+            'tingkat' => 'required|string|max:50',
+        ]);
+
+        Kelas::create($validated);
+
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Data kelas berhasil ditambahkan.');
     }
 
     /**
@@ -41,7 +52,11 @@ class KelasController extends Controller
      */
     public function show(Kelas $kelas)
     {
-        //
+        $kelas->load('santris');
+
+        return Inertia::render('Kelas/Show', [
+            'kelas' => $kelas,
+        ]);
     }
 
     /**
@@ -49,7 +64,9 @@ class KelasController extends Controller
      */
     public function edit(Kelas $kelas)
     {
-        //
+        return Inertia::render('Kelas/Edit', [
+            'kelas' => $kelas
+        ]);
     }
 
     /**
@@ -57,7 +74,16 @@ class KelasController extends Controller
      */
     public function update(Request $request, Kelas $kelas)
     {
-        //
+        $validated = $request->validate([
+            'nama_kelas' => 'required|string|max:100',
+            'tingkat' => 'required|string|max:50',
+        ]);
+
+        $kelas->update($validated);
+
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Data kelas berhasil diubah.');
     }
 
     /**
@@ -65,6 +91,14 @@ class KelasController extends Controller
      */
     public function destroy(Kelas $kelas)
     {
-        //
+        $kelas->delete();
+
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Data kelas berhasil dihapus.');
+
     }
+
+
+
 }
