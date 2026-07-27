@@ -17,4 +17,12 @@ class DashboardController extends Controller
     {
         return Inertia::render('Dashboard');
     }
+
+    public function classes(Request $request): Response{
+        return Inertia::render('Dashboard/Classes/SingleClass');
+    }
+
+    public function finance(Request $request): Response{
+        return Inertia::render('Dashboard/Finance/GeneralFinance');
+    }
 }
