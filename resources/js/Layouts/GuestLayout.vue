@@ -6,19 +6,16 @@ import { Link } from '@inertiajs/vue3';
 <template>
     <div class="relative min-h-screen flex items-center justify-center overflow-hidden">
         <!-- Background dengan efek blur -->
-        <div class="absolute inset-0 z-0">
-            <!-- Background Image -->
+        <div class="absolute inset-0 z-0 overflow-hidden">
+            <!-- Background Image dengan opacity -->
             <div 
-                class="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style="background-image: url('https://images.unsplash.com/photo-1580582932707-520aed937b7b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80')"
+                class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
+                style="background-image: url('https://www.emporioarchitect.com/upload/portofolio/1280/desain-pondok-pesantren-mediteran-2-lantai-55030223-443865277030223093318.jpg')"
             ></div>
-            
-            <!-- Overlay gradient -->
-            <div class="absolute inset-0 bg-gradient-to-br from-emerald-900/70 via-emerald-800/50 to-emerald-900/70 backdrop-blur-sm"></div>
-            
-            <!-- Decorative orbs -->
-            <div class="absolute top-[-20%] right-[-10%] h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl"></div>
-            <div class="absolute bottom-[-20%] left-[-10%] h-80 w-80 rounded-full bg-emerald-400/20 blur-3xl"></div>
+            <!-- Overlay with blur effect -->
+            <div class="absolute inset-0 backdrop-blur-sm bg-white/30"></div>
+            <!-- Additional overlay for better readability -->
+            <div class="absolute inset-0 bg-gradient-to-b from-white/50 via-white/30 to-white/60"></div>
         </div>
 
         <!-- Konten utama -->
@@ -28,9 +25,9 @@ import { Link } from '@inertiajs/vue3';
                 <Link href="/" class="block">
                     <div class="flex items-center gap-3">
                         <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm shadow-lg">
-                            <ApplicationLogo class="h-10 w-10 fill-current text-white" />
+                            <ApplicationLogo class="h-10 w-10 fill-current text-black" />
                         </div>
-                        <span class="text-2xl font-bold text-white drop-shadow-lg">
+                        <span class="text-2xl font-bold text-black drop-shadow-lg">
                             Pesantren<span class="text-emerald-300">.</span>
                         </span>
                     </div>
@@ -46,8 +43,8 @@ import { Link } from '@inertiajs/vue3';
                 <div class="p-8">
                     <!-- Header -->
                     <div class="mb-6 text-center">
-                        <h2 class="text-2xl font-bold text-white drop-shadow-sm">Selamat Datang</h2>
-                        <p class="mt-2 text-sm text-white/70">Silakan masuk ke akun Anda</p>
+                        <h2 class="text-2xl font-bold text-black drop-shadow-sm">Selamat Datang</h2>
+                        <p class="mt-2 text-sm text-gray/70">Silakan masuk ke akun Anda</p>
                     </div>
 
                     <!-- Slot untuk form login -->
@@ -55,7 +52,7 @@ import { Link } from '@inertiajs/vue3';
 
                     <!-- Footer -->
                     <div class="mt-6 text-center border-t border-white/10 pt-4">
-                        <p class="text-xs text-white/40">
+                        <p class="text-xs text-black/40">
                             © 2026 Pondok Pesantren
                         </p>
                     </div>
@@ -63,4 +60,4 @@ import { Link } from '@inertiajs/vue3';
             </div>
         </div>
     </div>
-</template>
+</template> 
