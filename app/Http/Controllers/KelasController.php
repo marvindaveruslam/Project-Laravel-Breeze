@@ -17,7 +17,7 @@ class KelasController extends Controller
               ->latest()
               ->get();
 
-        return Inertia::render('Kelas/Index', [
+        return Inertia::render('Dashboard/Classes/SingleClass', [
             'kelas' => $kelas
         ]);
     }
@@ -27,7 +27,9 @@ class KelasController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Kelas/Create');
+        return Inertia::render('Dashboard/Classes/SingleClass', [
+            'kelas' => null
+        ]);
     }
 
     /**
@@ -42,8 +44,9 @@ class KelasController extends Controller
 
         Kelas::create($validated);
 
+        // PERBAIKAN: Redirect ke dashboard/classes
         return redirect()
-            ->route('kelas.index')
+            ->route('dashboard.classes')  // ← ubah ini
             ->with('success', 'Data kelas berhasil ditambahkan.');
     }
 
@@ -54,7 +57,7 @@ class KelasController extends Controller
     {
         $kelas->load('santris');
 
-        return Inertia::render('Kelas/Show', [
+        return Inertia::render('Dashboard/Classes/SingleClass', [
             'kelas' => $kelas,
         ]);
     }
@@ -64,7 +67,7 @@ class KelasController extends Controller
      */
     public function edit(Kelas $kelas)
     {
-        return Inertia::render('Kelas/Edit', [
+        return Inertia::render('Dashboard/Classes/SingleClass', [
             'kelas' => $kelas
         ]);
     }
@@ -81,8 +84,9 @@ class KelasController extends Controller
 
         $kelas->update($validated);
 
+        // PERBAIKAN: Redirect ke dashboard/classes
         return redirect()
-            ->route('kelas.index')
+            ->route('dashboard.classes')  // ← ubah ini
             ->with('success', 'Data kelas berhasil diubah.');
     }
 
@@ -93,12 +97,9 @@ class KelasController extends Controller
     {
         $kelas->delete();
 
+        // PERBAIKAN: Redirect ke dashboard/classes
         return redirect()
-            ->route('kelas.index')
+            ->route('dashboard.classes')  // ← ubah ini
             ->with('success', 'Data kelas berhasil dihapus.');
-
     }
-
-
-
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Kelas;
+use App\Models\Santri;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,11 +20,34 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard');
     }
 
-    public function classes(Request $request): Response{
-        return Inertia::render('Dashboard/Classes/SingleClass');
+    public function classes(Request $request): Response
+    {
+        // Ambil data kelas dengan jumlah santri
+        $kelas = Kelas::withCount('santris')
+            ->latest()
+            ->get();
+
+        // Hitung statistik
+        $totalKelas = $kelas->count();
+        $totalSantri = Santri::count();
+        $rataRata = $totalKelas > 0 ? round($totalSantri / $totalKelas) : 0;
+
+        // Hitung jumlah tingkat yang berbeda
+        $tingkat = $kelas->groupBy('tingkat')->count();
+
+        return Inertia::render('Dashboard/Classes/SingleClass', [
+            'kelas' => $kelas,
+            'statistik' => [
+                'total_kelas' => $totalKelas,
+                'total_santri' => $totalSantri,
+                'rata_rata' => $rataRata,
+                'tingkat' => $tingkat,
+            ]
+        ]);
     }
 
-    public function finance(Request $request): Response{
+    public function finance(Request $request): Response
+    {
         return Inertia::render('Dashboard/Finance/GeneralFinance');
     }
 }
