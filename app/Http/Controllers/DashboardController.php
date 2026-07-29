@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Kelas;
 use App\Models\Santri;
+use App\Models\Guru;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,8 +47,69 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * 📚 Halaman Data Santri
+     * Menampilkan semua data santri dengan filter kelas
+     */
+    public function santri(Request $request): Response
+    {
+        // Ambil semua data santri dengan relasi kelas
+        $santri = Santri::with('kelas')
+            ->latest()
+            ->get();
+
+        // Ambil data kelas untuk filter
+        $kelas = Kelas::all();
+
+        // Hitung statistik santri
+        $totalSantri = Santri::count();
+        $totalKelas = Kelas::count();
+        $rataRata = $totalKelas > 0 ? round($totalSantri / $totalKelas) : 0;
+
+        return Inertia::render('Dashboard/Santri/DataSantri', [
+            'santri' => $santri,
+            'kelas' => $kelas,
+            'statistik' => [
+                'total_santri' => $totalSantri,
+                'total_kelas' => $totalKelas,
+                'rata_rata' => $rataRata,
+            ]
+        ]);
+    }
+
+    /**
+     * 👨‍🏫 Halaman Data Guru
+     * Menampilkan semua data guru dengan filter kelas
+     */
+    public function guru(Request $request): Response
+    {
+        // Ambil semua data guru dengan relasi kelas
+        $guru = Guru::with('kelas')
+            ->latest()
+            ->get();
+
+        // Ambil data kelas untuk filter
+        $kelas = Kelas::all();
+
+        // Hitung statistik guru
+        $totalGuru = Guru::count();
+        $totalKelas = Kelas::count();
+        $rataRata = $totalKelas > 0 ? round($totalGuru / $totalKelas) : 0;
+
+        return Inertia::render('Dashboard/Guru/DataGuru', [
+            'guru' => $guru,
+            'kelas' => $kelas,
+            'statistik' => [
+                'total_guru' => $totalGuru,
+                'total_kelas' => $totalKelas,
+                'rata_rata' => $rataRata,
+            ]
+        ]);
+    }
+
     public function finance(Request $request): Response
     {
         return Inertia::render('Dashboard/Finance/GeneralFinance');
     }
+
 }
