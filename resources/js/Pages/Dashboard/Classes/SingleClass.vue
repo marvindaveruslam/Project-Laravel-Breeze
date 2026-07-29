@@ -3,10 +3,26 @@ import { ref, computed, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
     kelas: Array,
     flash: Object
+});
+
+// ============================================
+// TOAST NOTIFICATION
+// ============================================
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+    }
 });
 
 // ============================================
@@ -22,7 +38,6 @@ const stats = computed(() => {
     const totalSantri = classes.value.reduce((sum, cls) => sum + (cls.santris_count || 0), 0);
     const rataRata = totalKelas > 0 ? Math.round(totalSantri / totalKelas) : 0;
     
-    // Hitung santri aktif & non-aktif (jika ada field status)
     const totalAktif = classes.value.reduce((sum, cls) => sum + (cls.aktif || 0), 0);
     const totalNonAktif = classes.value.reduce((sum, cls) => sum + (cls.non_aktif || 0), 0);
     
@@ -46,7 +61,7 @@ const isEdit = ref(false);
 const currentId = ref(null);
 const isLoading = ref(false);
 
-// Form data (sesuai dengan field di database Anda)
+// Form data
 const formData = ref({
     nama_kelas: '',
     tingkat: '',
@@ -85,7 +100,7 @@ const getInitials = (name) => {
 };
 
 // ============================================
-// FUNGSI CRUD
+// FUNGSI CRUD DENGAN TOAST
 // ============================================
 const resetForm = () => {
     formData.value = {
@@ -116,57 +131,105 @@ const editClass = (id) => {
 
 const saveClass = () => {
     if (!formData.value.nama_kelas || !formData.value.tingkat) {
-        alert('⚠️ Nama Kelas dan Tingkat harus diisi!');
+        // ✅ Toast Warning
+        Toast.fire({
+            icon: 'warning',
+            title: '⚠️ Nama Kelas dan Tingkat harus diisi!'
+        });
         return;
     }
 
     isLoading.value = true;
 
     if (isEdit.value) {
-        // ✅ EDIT: Kirim PUT request
         router.put(`/kelas/${currentId.value}`, formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
                 isLoading.value = false;
+                
+                // ✅ Toast Success - Update
+                Toast.fire({
+                    icon: 'success',
+                    title: '✨ Data kelas berhasil diperbarui'
+                });
             },
             onError: (errors) => {
                 console.error('Error update:', errors);
                 isLoading.value = false;
-                alert('⚠️ Gagal mengupdate data!');
+                
+                // ✅ Toast Error
+                Toast.fire({
+                    icon: 'error',
+                    title: '❌ Gagal memperbarui data!'
+                });
             }
         });
     } else {
-        // ✅ TAMBAH: Kirim POST request
         router.post('/kelas', formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
                 isLoading.value = false;
+                
+                // ✅ Toast Success - Create
+                Toast.fire({
+                    icon: 'success',
+                    title: '🎉 Data kelas berhasil ditambahkan'
+                });
             },
             onError: (errors) => {
                 console.error('Error save:', errors);
                 isLoading.value = false;
-                alert('⚠️ Gagal menyimpan data!');
+                
+                // ✅ Toast Error
+                Toast.fire({
+                    icon: 'error',
+                    title: '❌ Gagal menyimpan data!'
+                });
             }
         });
     }
 };
 
 const deleteClass = (id) => {
-    if (confirm('⚠️ Yakin ingin menghapus kelas ini?')) {
-        isLoading.value = true;
-        router.delete(`/kelas/${id}`, {
-            onSuccess: () => {
-                isLoading.value = false;
-            },
-            onError: (errors) => {
-                console.error('Error delete:', errors);
-                isLoading.value = false;
-                alert('⚠️ Gagal menghapus data!');
-            }
-        });
-    }
+    // ✅ SweetAlert Confirm Delete (tetap pakai popup untuk konfirmasi)
+    Swal.fire({
+        title: 'Yakin ingin menghapus?',
+        text: 'Data yang dihapus tidak dapat dikembalikan!',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            isLoading.value = true;
+            router.delete(`/kelas/${id}`, {
+                onSuccess: () => {
+                    isLoading.value = false;
+                    
+                    // ✅ Toast Success - Delete
+                    Toast.fire({
+                        icon: 'success',
+                        title: '🗑️ Data kelas berhasil dihapus'
+                    });
+                },
+                onError: (errors) => {
+                    console.error('Error delete:', errors);
+                    isLoading.value = false;
+                    
+                    // ✅ Toast Error
+                    Toast.fire({
+                        icon: 'error',
+                        title: '❌ Gagal menghapus data!'
+                    });
+                }
+            });
+        }
+    });
 };
 
 const closeModal = () => {
@@ -186,6 +249,24 @@ const goToPage = (page) => {
 watch(() => props.kelas, (newData) => {
     classes.value = newData || [];
 });
+
+// ============================================
+// FLASH MESSAGE DARI SERVER (Opsional)
+// ============================================
+watch(() => props.flash, (newFlash) => {
+    if (newFlash?.success) {
+        Toast.fire({
+            icon: 'success',
+            title: newFlash.success
+        });
+    }
+    if (newFlash?.error) {
+        Toast.fire({
+            icon: 'error',
+            title: newFlash.error
+        });
+    }
+}, { deep: true });
 </script>
 
 <template>
@@ -445,7 +526,11 @@ watch(() => props.kelas, (newData) => {
         <!-- ========================================== -->
         <!-- MODAL TAMBAH / EDIT KELAS                 -->
         <!-- ========================================== -->
-        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div 
+            v-if="showModal" 
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            @click.self="closeModal"
+        >
             <div class="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
                 <!-- Header Modal -->
                 <div class="flex justify-between items-center p-6 border-b border-gray-200">
