@@ -31,12 +31,12 @@ const Toast = Swal.mixin({
 const gurus = ref(props.gurus || []);
 
 // ============================================
-// STATISTIK OTOMATIS
+// STATISTIK
 // ============================================
 const stats = computed(() => {
     const totalGuru = gurus.value.length;
-    const lakiLaki = gurus.value.filter(g => g.jenis_kelamin === 'L').length;
-    const perempuan = gurus.value.filter(g => g.jenis_kelamin === 'P').length;
+    const lakiLaki = gurus.value.filter(g => g.jenis_kelamin == '1' || g.jenis_kelamin == 'L').length;
+    const perempuan = gurus.value.filter(g => g.jenis_kelamin == '2' || g.jenis_kelamin == 'P').length;
     
     return {
         totalGuru,
@@ -46,7 +46,7 @@ const stats = computed(() => {
 });
 
 // ============================================
-// STATE INTERAKSI
+// STATE
 // ============================================
 const searchQuery = ref('');
 const currentPage = ref(1);
@@ -56,7 +56,6 @@ const isEdit = ref(false);
 const currentId = ref(null);
 const isLoading = ref(false);
 
-// Form data - SESUAI DENGAN MODEL
 const formData = ref({
     nama: '',
     nip: '',
@@ -98,7 +97,11 @@ const getInitials = (name) => {
 };
 
 const getJenisKelaminLabel = (jk) => {
-    return jk === 'L' ? 'Laki-laki' : 'Perempuan';
+    if (jk == '1' || jk == 1) return 'Laki-laki';
+    if (jk == '2' || jk == 2) return 'Perempuan';
+    if (jk === 'L') return 'Laki-laki';
+    if (jk === 'P') return 'Perempuan';
+    return '-';
 };
 
 const formatDate = (date) => {
@@ -111,7 +114,7 @@ const formatDate = (date) => {
 };
 
 // ============================================
-// FUNGSI CRUD DENGAN TOAST
+// CRUD FUNCTIONS - SAMA SEPERTI KELAS
 // ============================================
 const resetForm = () => {
     formData.value = {
@@ -158,11 +161,15 @@ const saveGuru = () => {
     isLoading.value = true;
 
     if (isEdit.value) {
+        // ✅ SAMA SEPERTI KELAS: PAKAI ROUTE GURU.UPDATE
         router.put(route('guru.update', currentId.value), formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
                 isLoading.value = false;
+                
+                // ✅ Redirect ke dashboard.guru (sama seperti kelas)
+                router.get(route('dashboard.guru'));
                 
                 Toast.fire({
                     icon: 'success',
@@ -187,11 +194,15 @@ const saveGuru = () => {
             }
         });
     } else {
+        // ✅ SAMA SEPERTI KELAS: PAKAI ROUTE GURU.STORE
         router.post(route('guru.store'), formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
                 isLoading.value = false;
+                
+                // ✅ Redirect ke dashboard.guru (sama seperti kelas)
+                router.get(route('dashboard.guru'));
                 
                 Toast.fire({
                     icon: 'success',
@@ -232,9 +243,13 @@ const deleteGuru = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             isLoading.value = true;
+            // ✅ SAMA SEPERTI KELAS: PAKAI ROUTE GURU.DESTROY
             router.delete(route('guru.destroy', id), {
                 onSuccess: () => {
                     isLoading.value = false;
+                    
+                    // ✅ Redirect ke dashboard.guru (sama seperti kelas)
+                    router.get(route('dashboard.guru'));
                     
                     Toast.fire({
                         icon: 'success',
@@ -267,15 +282,13 @@ const goToPage = (page) => {
 };
 
 // ============================================
-// WATCH UNTUK UPDATE DATA
+// WATCH
 // ============================================
 watch(() => props.gurus, (newData) => {
+    console.log('Data guru updated:', newData);
     gurus.value = newData || [];
 });
 
-// ============================================
-// FLASH MESSAGE DARI SERVER
-// ============================================
 watch(() => props.flash, (newFlash) => {
     if (newFlash?.success) {
         Toast.fire({
@@ -300,9 +313,7 @@ watch(() => props.flash, (newFlash) => {
         header-title="👨‍🏫 Data Guru"
         :header-subtitle="`Total Guru: ${stats.totalGuru} | L: ${stats.lakiLaki} | P: ${stats.perempuan}`"
     >
-        <!-- ========================================== -->
-        <!-- STATISTIK CARDS (3 KARTU)                  -->
-        <!-- ========================================== -->
+        <!-- STATISTIK CARDS -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                 <div class="flex items-center justify-between">
@@ -350,11 +361,9 @@ watch(() => props.flash, (newFlash) => {
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TABEL GURU                                -->
-        <!-- ========================================== -->
+        <!-- TABEL GURU -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <!-- Header Tabel -->
+            <!-- Header -->
             <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800">📋 Daftar Guru</h3>
@@ -385,7 +394,7 @@ watch(() => props.flash, (newFlash) => {
                 </div>
             </div>
 
-            <!-- Tabel -->
+            <!-- Table -->
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-gray-50">
@@ -412,14 +421,12 @@ watch(() => props.flash, (newFlash) => {
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ item.nip || '-' }}</td>
                             <td class="px-6 py-4 text-sm">
-                                <span :class="item.jenis_kelamin === 'L' ? 'text-blue-600' : 'text-pink-600'">
+                                <span :class="item.jenis_kelamin == '1' || item.jenis_kelamin == 'L' ? 'text-blue-600' : 'text-pink-600'">
                                     {{ getJenisKelaminLabel(item.jenis_kelamin) }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ item.no_hp || '-' }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
-                                {{ formatDate(item.created_at) }}
-                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(item.created_at) }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-1">
                                     <button 
@@ -492,9 +499,7 @@ watch(() => props.flash, (newFlash) => {
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- INFO CARD TAMBAHAN                         -->
-        <!-- ========================================== -->
+        <!-- INFO CARD -->
         <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                 <div class="flex items-center gap-3">
@@ -539,16 +544,13 @@ watch(() => props.flash, (newFlash) => {
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- MODAL TAMBAH / EDIT GURU                   -->
-        <!-- ========================================== -->
+        <!-- MODAL -->
         <div 
             v-if="showModal" 
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
             @click.self="closeModal"
         >
             <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-                <!-- Header Modal -->
                 <div class="flex justify-between items-center p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800">
                         {{ isEdit ? '✏️ Edit Guru' : '📝 Tambah Guru' }}
@@ -560,7 +562,6 @@ watch(() => props.flash, (newFlash) => {
                     </button>
                 </div>
 
-                <!-- Form -->
                 <div class="p-6 space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
@@ -617,7 +618,6 @@ watch(() => props.flash, (newFlash) => {
                     </div>
                 </div>
 
-                <!-- Footer Modal -->
                 <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
                     <button 
                         @click="closeModal"
