@@ -30,6 +30,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
     Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
     Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
+    Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
 });
 
 

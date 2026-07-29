@@ -56,6 +56,13 @@ class DashboardController extends Controller
     {
         return Inertia::render('Dashboard/Santri/Index');
     }
+    public function guru(Request $request): Response
+    {
+        return Inertia::render('Dashboard/Guru/Index');
+    }
+
+
+
 
 
 }
