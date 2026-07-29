@@ -45,7 +45,7 @@ class GuruController extends Controller
         Guru::create($validated);
 
             return redirect()
-                ->route('guru.index')
+                ->route('dashboard.guru')
                 ->with('success', 'Guru berhasil ditambahkan.');
 
     }
@@ -85,7 +85,7 @@ class GuruController extends Controller
         $guru->update($validated);
 
         return redirect()
-            ->route('guru.index')
+            ->route('dashboard.guru')
             ->with('success', 'Guru berhasil diperbarui.');
     }
 
@@ -97,7 +97,7 @@ class GuruController extends Controller
         $guru->delete();
 
         return redirect()
-            ->route('guru.index')
+            ->route('dashboard.guru')
             ->with('success', 'Guru berhasil dihapus.');
     }
 }
