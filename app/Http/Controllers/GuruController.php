@@ -13,10 +13,10 @@ class GuruController extends Controller
      */
     public function index()
     {
-        $guru = Guru::latest()->get();
+        $gurus = Guru::latest()->get();
 
     return Inertia::render('Dashboard/Guru/Index', [
-        'guru' => $guru,
+        'gurus' => $gurus,
     ]);
 
     }
