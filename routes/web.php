@@ -4,6 +4,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\SantriController;
+use App\Http\Controllers\GuruController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -37,6 +38,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas',]);
     Route::resource('santri', SantriController::class);
+    Route::resource('guru', GuruController::class);
 });
 
 require __DIR__.'/auth.php';
