@@ -52,7 +52,7 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard/Finance/GeneralFinance');
     }
 
-    public function Santri(Request $request): Response
+    public function santri(Request $request): Response
     {
         return Inertia::render('Dashboard/Santri/Index');
     }
