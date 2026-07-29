@@ -58,7 +58,10 @@ class DashboardController extends Controller
     }
     public function guru(Request $request): Response
     {
-        return Inertia::render('Dashboard/Guru/Index');
+        $gurus=Guru:: latest ()->get();
+        return Inertia::render('Dashboard/Guru/Index',[
+            'gurus' =>$gurus,
+        ]);
     }
 
 
