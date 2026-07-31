@@ -16,7 +16,6 @@ class KelasController extends Controller
             ->orderBy('nama_kelas')
             ->get();
 
-        // Hitung statistik
         $totalSantri = Santri::count();
         $totalKelas = $kelas->count();
 
@@ -44,9 +43,22 @@ class KelasController extends Controller
             ->with('success', 'Data kelas berhasil ditambahkan.');
     }
 
+    public function update(Request $request, Kelas $kelas)
+    {
+        $validated = $request->validate([
+            'nama_kelas' => 'required|string|max:100',
+            'tingkat' => 'required|integer|min:1|max:6',
+        ]);
+
+        $kelas->update($validated);
+
+        return redirect()
+            ->route('dashboard.classes')
+            ->with('success', 'Data kelas berhasil diperbarui.');
+    }
+
     public function destroy(Kelas $kelas)
     {
-        // Cek apakah ada santri di kelas ini
         if ($kelas->santris()->count() > 0) {
             return redirect()
                 ->route('dashboard.classes')
