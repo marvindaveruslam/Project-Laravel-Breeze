@@ -1,211 +1,144 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { router } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import Swal from 'sweetalert2';
+
+const props = defineProps({
+    santris: Array,
+    gurus: Array,
+    kelas: Array,
+    stats: Object,
+    recent_activities: Array,
+});
 
 // ============================================
-// DATA STATISTIK
+// TOAST NOTIFICATION
 // ============================================
-const stats = ref([
-    { 
-        label: 'Total Santri', 
-        value: '10',
-        icon: 'users',
-        change: '+12%',
-        changeType: 'increase',
-        borderColor: 'border-blue-200',
-        bgColor: 'bg-blue-50',
-        textColor: 'text-blue-600',
-        iconBg: 'bg-blue-100'
-    },
-    { 
-        label: 'Santri Aktif', 
-        value: '8',
-        icon: 'user-check',
-        change: '+5%',
-        changeType: 'increase',
-        borderColor: 'border-green-200',
-        bgColor: 'bg-green-50',
-        textColor: 'text-green-600',
-        iconBg: 'bg-green-100'
-    },
-    { 
-        label: 'Santri Non-Aktif', 
-        value: '2',
-        icon: 'user-x',
-        change: '-2%',
-        changeType: 'decrease',
-        borderColor: 'border-red-200',
-        bgColor: 'bg-red-50',
-        textColor: 'text-red-600',
-        iconBg: 'bg-red-100'
-    },
-    { 
-        label: 'Catatan Khusus', 
-        value: '5',
-        icon: 'file-text',
-        change: '+8%',
-        changeType: 'increase',
-        borderColor: 'border-yellow-200',
-        bgColor: 'bg-yellow-50',
-        textColor: 'text-yellow-600',
-        iconBg: 'bg-yellow-100'
-    },
-]);
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+    }
+});
 
 // ============================================
-// DATA SANTRI
+// DATA REAKTIF
 // ============================================
-const students = ref([
-    { id: 1, name: 'Ahmad Fauzi', class: '3A', status: 'active', gender: 'Laki-laki', age: 15, parent: 'H. Fauzi Rahman' },
-    { id: 2, name: 'Budi Santoso', class: '2B', status: 'active', gender: 'Laki-laki', age: 14, parent: 'Hj. Siti Aminah' },
-    { id: 3, name: 'Citra Dewi', class: '1A', status: 'active', gender: 'Perempuan', age: 12, parent: 'H. Agus Salim' },
-    { id: 4, name: 'Dian Pratama', class: '3B', status: 'active', gender: 'Laki-laki', age: 15, parent: 'Hj. Fatimah' },
-    { id: 5, name: 'Eka Putri', class: '2A', status: 'inactive', gender: 'Perempuan', age: 13, parent: 'H. M. Rizky' },
-    { id: 6, name: 'Fajar Nugroho', class: '1B', status: 'active', gender: 'Laki-laki', age: 12, parent: 'Hj. Dewi' },
-    { id: 7, name: 'Gita Permata', class: '3A', status: 'active', gender: 'Perempuan', age: 16, parent: 'H. Budi Santoso' },
-    { id: 8, name: 'Hendra Wijaya', class: '2A', status: 'inactive', gender: 'Laki-laki', age: 14, parent: 'Hj. Rina' },
-    { id: 9, name: 'Indah Lestari', class: '3B', status: 'active', gender: 'Perempuan', age: 15, parent: 'H. Joko' },
-    { id: 10, name: 'Joko Susilo', class: '1A', status: 'active', gender: 'Laki-laki', age: 11, parent: 'Hj. Suryani' },
-]);
-
-// ============================================
-// DATA GURU
-// ============================================
-const teachers = ref([
-    { id: 1, name: 'Ustadz Ahmad Rifa\'i, S.Ag.', subject: 'Tahfidz & Tafsir', class: '3A', phone: '0812-3456-7890' },
-    { id: 2, name: 'Ustadzah Siti Khadijah, S.Pd.I.', subject: 'Fiqh & Akhlaq', class: '3B', phone: '0813-4567-8901' },
-    { id: 3, name: 'Ustadz Muhammad Ali, S.Pd.', subject: 'Nahwu & Sharaf', class: '2A', phone: '0814-5678-9012' },
-    { id: 4, name: 'Ustadzah Fatimah Azzahra, M.Pd.', subject: 'Tajwid & Qira\'ah', class: '2B', phone: '0815-6789-0123' },
-    { id: 5, name: 'Ustadz Abdul Rahman, Lc.', subject: 'Hadits & Tafsir', class: '1A', phone: '0816-7890-1234' },
-    { id: 6, name: 'Ustadzah Maimunah, S.Ag.', subject: 'Tarikh & Kebudayaan', class: '1B', phone: '0817-8901-2345' },
-]);
-
-// ============================================
-// SEARCH STATE
-// ============================================
-const searchQuery = ref('');
-const searchResults = ref([]);
+const santris = ref(props.santris || []);
+const gurus = ref(props.gurus || []);
+const kelas = ref(props.kelas || []);
+const recentActivities = ref(props.recent_activities || []);
 
 // ============================================
 // MODAL STATE
 // ============================================
-const showAddStudentModal = ref(false);
-const showAddTeacherModal = ref(false);
-const showClassDetail = ref(false);
-const showAddTeacherToClassModal = ref(false);
-const selectedClass = ref(null);
+const showSantriModal = ref(false);
+const showGuruModal = ref(false);
 const isSubmitting = ref(false);
 
 // ============================================
 // FORM TAMBAH SANTRI
 // ============================================
-const newStudent = ref({
-    name: '',
-    class: '',
-    status: 'active',
-    gender: 'Laki-laki',
-    age: '',
-    parent: '',
+const formSantri = ref({
+    nis: '',
+    nama: '',
+    jenis_kelamin: '',
+    tempat_lahir: '',
+    tanggal_lahir: '',
+    alamat: '',
+    no_hp: '',
+    kelas_id: '',
 });
 
-const classOptions = ['1A', '1B', '2A', '2B', '3A', '3B'];
+const resetFormSantri = () => {
+    formSantri.value = {
+        nis: '',
+        nama: '',
+        jenis_kelamin: '',
+        tempat_lahir: '',
+        tanggal_lahir: '',
+        alamat: '',
+        no_hp: '',
+        kelas_id: '',
+    };
+};
 
 // ============================================
 // FORM TAMBAH GURU
 // ============================================
-const newTeacher = ref({
-    name: '',
-    subject: '',
-    class: '',
-    phone: '',
+const formGuru = ref({
+    nama: '',
+    nip: '',
+    jenis_kelamin: '',
+    no_hp: '',
+    alamat: '',
+});
+
+const resetFormGuru = () => {
+    formGuru.value = {
+        nama: '',
+        nip: '',
+        jenis_kelamin: '',
+        no_hp: '',
+        alamat: '',
+    };
+};
+
+// ============================================
+// STATISTIK CARDS
+// ============================================
+const statsCards = computed(() => {
+    const s = props.stats || {};
+    return [
+        { 
+            label: 'Total Santri', 
+            value: s.total_santri || 0,
+            icon: 'users',
+            bgColor: 'bg-blue-50',
+            textColor: 'text-blue-600',
+            iconBg: 'bg-blue-100'
+        },
+        { 
+            label: 'Santri Laki-laki', 
+            value: s.laki_laki || 0,
+            icon: 'user-check',
+            bgColor: 'bg-green-50',
+            textColor: 'text-green-600',
+            iconBg: 'bg-green-100'
+        },
+        { 
+            label: 'Santri Perempuan', 
+            value: s.perempuan || 0,
+            icon: 'user-x',
+            bgColor: 'bg-pink-50',
+            textColor: 'text-pink-600',
+            iconBg: 'bg-pink-100'
+        },
+        { 
+            label: 'Total Guru', 
+            value: s.total_guru || 0,
+            icon: 'file-text',
+            bgColor: 'bg-purple-50',
+            textColor: 'text-purple-600',
+            iconBg: 'bg-purple-100'
+        },
+    ];
 });
 
 // ============================================
-// FORM TAMBAH GURU KE KELAS
+// SEARCH
 // ============================================
-const teacherToClass = ref({
-    teacherId: '',
-    class: '',
-});
+const searchQuery = ref('');
+const searchResults = ref([]);
 
-// ============================================
-// COMPUTED: CLASS SUMMARY
-// ============================================
-const classSummary = computed(() => {
-    const classes = ['1A', '1B', '2A', '2B', '3A', '3B'];
-    return classes.map(cls => {
-        const studentsInClass = students.value.filter(s => s.class === cls);
-        const total = studentsInClass.length;
-        const active = studentsInClass.filter(s => s.status === 'active').length;
-        const inactive = studentsInClass.filter(s => s.status === 'inactive').length;
-        const teachersInClass = teachers.value.filter(t => t.class === cls);
-        return { 
-            name: cls, 
-            total, 
-            active, 
-            inactive,
-            teachers: teachersInClass,
-            students: studentsInClass
-        };
-    });
-});
-
-// ============================================
-// DATA AKTIVITAS TERBARU
-// ============================================
-const recentActivities = ref([
-    { 
-        id: 1, 
-        student: 'Ahmad Fauzi', 
-        class: '3A', 
-        action: 'Menambah Transaksi SPP', 
-        time: '2 jam lalu',
-        amount: 'Rp 150.000',
-        status: 'success'
-    },
-    { 
-        id: 2, 
-        student: 'Budi Santoso', 
-        class: '2B', 
-        action: 'Update Data Santri', 
-        time: '4 jam lalu',
-        amount: '-',
-        status: 'info'
-    },
-    { 
-        id: 3, 
-        student: 'Citra Dewi', 
-        class: '1A', 
-        action: 'Pendaftaran Santri Baru', 
-        time: '1 hari lalu',
-        amount: '-',
-        status: 'warning'
-    },
-    { 
-        id: 4, 
-        student: 'Dian Pratama', 
-        class: '3B', 
-        action: 'Pembayaran SPP', 
-        time: '1 hari lalu',
-        amount: 'Rp 150.000',
-        status: 'success'
-    },
-    { 
-        id: 5, 
-        student: 'Eka Putri', 
-        class: '2A', 
-        action: 'Cuti Akademik', 
-        time: '2 hari lalu',
-        amount: '-',
-        status: 'danger'
-    },
-]);
-
-// ============================================
-// FUNGSI SEARCH
-// ============================================
-const searchStudents = () => {
+const searchAll = () => {
     if (!searchQuery.value.trim()) {
         searchResults.value = [];
         return;
@@ -213,22 +146,17 @@ const searchStudents = () => {
 
     const query = searchQuery.value.toLowerCase().trim();
     
-    const studentResults = students.value.filter(student => 
-        student.name.toLowerCase().includes(query) ||
-        student.class.toLowerCase().includes(query) ||
-        student.parent.toLowerCase().includes(query)
-    );
+    const santriResults = santris.value.filter(s => 
+        s.nama?.toLowerCase().includes(query) ||
+        s.nis?.toLowerCase().includes(query) ||
+        s.kelas?.nama_kelas?.toLowerCase().includes(query)
+    ).map(s => ({ ...s, type: 'santri' }));
 
-    const teacherResults = teachers.value.filter(teacher =>
-        teacher.name.toLowerCase().includes(query) ||
-        teacher.subject.toLowerCase().includes(query) ||
-        teacher.class.toLowerCase().includes(query)
-    );
+    const guruResults = gurus.value.filter(g =>
+        g.nama?.toLowerCase().includes(query)
+    ).map(g => ({ ...g, type: 'guru' }));
 
-    searchResults.value = [
-        ...studentResults.map(s => ({ ...s, type: 'student' })),
-        ...teacherResults.map(t => ({ ...t, type: 'teacher' }))
-    ];
+    searchResults.value = [...santriResults, ...guruResults];
 };
 
 const clearSearch = () => {
@@ -239,143 +167,133 @@ const clearSearch = () => {
 // ============================================
 // FUNGSI TAMBAH SANTRI
 // ============================================
-const resetStudentForm = () => {
-    newStudent.value = {
-        name: '',
-        class: '',
-        status: 'active',
-        gender: 'Laki-laki',
-        age: '',
-        parent: '',
-    };
+const openSantriModal = () => {
+    resetFormSantri();
+    showSantriModal.value = true;
 };
 
-const submitStudent = () => {
-    if (!newStudent.value.name || !newStudent.value.class || !newStudent.value.age) {
-        alert('Mohon lengkapi data yang diperlukan (Nama, Kelas, dan Usia)');
+const submitSantri = () => {
+    // Validasi
+    if (!formSantri.value.nis || !formSantri.value.nama || !formSantri.value.jenis_kelamin) {
+        Toast.fire({
+            icon: 'warning',
+            title: '⚠️ NIS, Nama, dan Jenis Kelamin wajib diisi!'
+        });
         return;
     }
 
     isSubmitting.value = true;
 
-    setTimeout(() => {
-        const newId = students.value.length + 1;
-        students.value.push({
-            id: newId,
-            name: newStudent.value.name,
-            class: newStudent.value.class,
-            status: newStudent.value.status,
-            gender: newStudent.value.gender,
-            age: parseInt(newStudent.value.age),
-            parent: newStudent.value.parent || '-',
-        });
-
-        updateStats();
-        resetStudentForm();
-        showAddStudentModal.value = false;
-        isSubmitting.value = false;
-        alert('✅ Santri berhasil ditambahkan!');
-    }, 1000);
+    router.post(route('santri.store'), formSantri.value, {
+        onSuccess: () => {
+            showSantriModal.value = false;
+            resetFormSantri();
+            isSubmitting.value = false;
+            
+            Toast.fire({
+                icon: 'success',
+                title: '🎉 Santri berhasil ditambahkan!'
+            });
+            
+            setTimeout(() => {
+                router.visit(route('dashboard.santri'));
+            }, 1000);
+        },
+        onError: (errors) => {
+            isSubmitting.value = false;
+            console.error('Error:', errors);
+            
+            let errorMsg = '❌ Gagal menambahkan santri!';
+            if (errors && typeof errors === 'object') {
+                const messages = Object.values(errors).flat();
+                if (messages.length > 0) {
+                    errorMsg = messages.join('\n');
+                }
+            }
+            Toast.fire({
+                icon: 'error',
+                title: errorMsg
+            });
+        }
+    });
 };
 
 // ============================================
 // FUNGSI TAMBAH GURU
 // ============================================
-const resetTeacherForm = () => {
-    newTeacher.value = {
-        name: '',
-        subject: '',
-        class: '',
-        phone: '',
-    };
+const openGuruModal = () => {
+    resetFormGuru();
+    showGuruModal.value = true;
 };
 
-const submitTeacher = () => {
-    if (!newTeacher.value.name || !newTeacher.value.subject || !newTeacher.value.class) {
-        alert('Mohon lengkapi data yang diperlukan (Nama, Mata Pelajaran, dan Kelas)');
-        return;
-    }
-
-    isSubmitting.value = true;
-
-    setTimeout(() => {
-        const newId = teachers.value.length + 1;
-        teachers.value.push({
-            id: newId,
-            name: newTeacher.value.name,
-            subject: newTeacher.value.subject,
-            class: newTeacher.value.class,
-            phone: newTeacher.value.phone || '-',
+const submitGuru = () => {
+    // Validasi
+    if (!formGuru.value.nama || !formGuru.value.jenis_kelamin) {
+        Toast.fire({
+            icon: 'warning',
+            title: '⚠️ Nama dan Jenis Kelamin wajib diisi!'
         });
-
-        resetTeacherForm();
-        showAddTeacherModal.value = false;
-        isSubmitting.value = false;
-        alert('✅ Guru berhasil ditambahkan!');
-    }, 1000);
-};
-
-// ============================================
-// FUNGSI TAMBAH GURU KE KELAS
-// ============================================
-const openAddTeacherToClass = (cls) => {
-    selectedClass.value = cls;
-    teacherToClass.value.class = cls;
-    showAddTeacherToClassModal.value = true;
-};
-
-const submitTeacherToClass = () => {
-    if (!teacherToClass.value.teacherId) {
-        alert('Silakan pilih guru terlebih dahulu');
         return;
     }
 
     isSubmitting.value = true;
 
-    setTimeout(() => {
-        const teacher = teachers.value.find(t => t.id === parseInt(teacherToClass.value.teacherId));
-        if (teacher) {
-            teacher.class = teacherToClass.value.class;
-            alert(`✅ Guru ${teacher.name} berhasil ditambahkan ke kelas ${teacherToClass.value.class}`);
+    router.post(route('guru.store'), formGuru.value, {
+        onSuccess: () => {
+            showGuruModal.value = false;
+            resetFormGuru();
+            isSubmitting.value = false;
+            
+            Toast.fire({
+                icon: 'success',
+                title: '🎉 Guru berhasil ditambahkan!'
+            });
+            
+            setTimeout(() => {
+                router.visit(route('dashboard.guru'));
+            }, 1000);
+        },
+        onError: (errors) => {
+            isSubmitting.value = false;
+            console.error('Error:', errors);
+            
+            let errorMsg = '❌ Gagal menambahkan guru!';
+            if (errors && typeof errors === 'object') {
+                const messages = Object.values(errors).flat();
+                if (messages.length > 0) {
+                    errorMsg = messages.join('\n');
+                }
+            }
+            Toast.fire({
+                icon: 'error',
+                title: errorMsg
+            });
         }
-        showAddTeacherToClassModal.value = false;
-        isSubmitting.value = false;
-        teacherToClass.value = { teacherId: '', class: '' };
-    }, 1000);
+    });
 };
 
 // ============================================
-// FUNGSI OPEN CLASS DETAIL
+// NAVIGASI
 // ============================================
-const openClassDetail = (cls) => {
-    selectedClass.value = cls;
-    showClassDetail.value = true;
+const goToSantri = () => {
+    router.visit(route('dashboard.santri'));
+};
+
+const goToGuru = () => {
+    router.visit(route('dashboard.guru'));
+};
+
+const goToKelas = () => {
+    router.visit(route('dashboard.classes'));
 };
 
 // ============================================
-// UPDATE STATS
+// HELPERS
 // ============================================
-const updateStats = () => {
-    const total = students.value.length;
-    const active = students.value.filter(s => s.status === 'active').length;
-    const inactive = students.value.filter(s => s.status === 'inactive').length;
-    
-    stats.value[0].value = total.toString();
-    stats.value[1].value = active.toString();
-    stats.value[2].value = inactive.toString();
-};
-
-// ============================================
-// FUNGSI HELPERS
-// ============================================
-const getStatusBadge = (status) => {
-    return status === 'active' 
-        ? 'bg-green-100 text-green-700' 
-        : 'bg-red-100 text-red-700';
-};
-
-const getStatusText = (status) => {
-    return status === 'active' ? 'Aktif' : 'Non-Aktif';
+const getStatusBadge = (type) => {
+    return type === 'santri' 
+        ? 'bg-blue-100 text-blue-700' 
+        : 'bg-purple-100 text-purple-700';
 };
 
 const getIconPath = (icon) => {
@@ -390,6 +308,12 @@ const getIconPath = (icon) => {
     };
     return icons[icon] || '';
 };
+
+const getJenisKelaminLabel = (jk) => {
+    if (jk === 'L' || jk === '1') return 'Laki-laki';
+    if (jk === 'P' || jk === '2') return 'Perempuan';
+    return jk || '-';
+};
 </script>
 
 <template>
@@ -401,7 +325,7 @@ const getIconPath = (icon) => {
         header-subtitle="Selamat datang kembali, Adi | Pimpinan"
     >
         <!-- ========================================== -->
-        <!-- SEARCH BAR + BUTTONS                      -->
+        <!-- SEARCH BAR                                -->
         <!-- ========================================== -->
         <div class="mb-6">
             <div class="flex flex-col sm:flex-row gap-3">
@@ -413,7 +337,7 @@ const getIconPath = (icon) => {
                     </div>
                     <input 
                         v-model="searchQuery"
-                        @input="searchStudents"
+                        @input="searchAll"
                         type="text"
                         placeholder="Cari nama santri, guru, atau kelas..."
                         class="w-full pl-10 pr-24 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-sm"
@@ -436,7 +360,7 @@ const getIconPath = (icon) => {
                 
                 <div class="flex gap-2">
                     <button 
-                        @click="showAddStudentModal = true"
+                        @click="openSantriModal"
                         class="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition shadow-sm flex items-center gap-2 whitespace-nowrap text-sm"
                     >
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,7 +369,7 @@ const getIconPath = (icon) => {
                         Tambah Santri
                     </button>
                     <button 
-                        @click="showAddTeacherModal = true"
+                        @click="openGuruModal"
                         class="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition shadow-sm flex items-center gap-2 whitespace-nowrap text-sm"
                     >
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -471,55 +395,29 @@ const getIconPath = (icon) => {
                 
                 <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
                     <div v-for="result in searchResults" :key="result.id + result.type" 
-                         class="px-6 py-3 hover:bg-gray-50 transition">
+                         class="px-6 py-3 hover:bg-gray-50 transition cursor-pointer"
+                         @click="result.type === 'santri' ? goToSantri() : goToGuru()">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                                     :class="result.type === 'student' ? 'bg-blue-500' : 'bg-purple-500'">
-                                    {{ result.type === 'student' ? 'S' : 'G' }}
+                                     :class="result.type === 'santri' ? 'bg-blue-500' : 'bg-purple-500'">
+                                    {{ result.type === 'santri' ? 'S' : 'G' }}
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-2">
-                                        <p class="text-sm font-semibold text-gray-800">{{ result.name }}</p>
-                                        <span class="text-xs px-2 py-0.5 rounded-full" 
-                                              :class="result.type === 'student' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'">
-                                            {{ result.type === 'student' ? 'Santri' : 'Guru' }}
+                                        <p class="text-sm font-semibold text-gray-800">{{ result.nama || result.name }}</p>
+                                        <span class="text-xs px-2 py-0.5 rounded-full" :class="getStatusBadge(result.type)">
+                                            {{ result.type === 'santri' ? 'Santri' : 'Guru' }}
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
-                                        <span v-if="result.type === 'student'">
-                                            Kelas: <span class="font-medium text-gray-700">{{ result.class }}</span>
-                                        </span>
-                                        <span v-else>
-                                            Mengajar: <span class="font-medium text-gray-700">{{ result.class }}</span>
-                                        </span>
-                                        <span v-if="result.type === 'student'" class="text-gray-300">|</span>
-                                        <span v-if="result.type === 'student'">
-                                            Status: <span class="font-medium" :class="result.status === 'active' ? 'text-green-600' : 'text-red-600'">
-                                                {{ getStatusText(result.status) }}
-                                            </span>
-                                        </span>
-                                        <span v-else class="text-gray-300">|</span>
-                                        <span v-if="result.type === 'teacher'">
-                                            Mata Pelajaran: <span class="font-medium text-gray-700">{{ result.subject }}</span>
-                                        </span>
-                                        <span v-if="result.type === 'student' && result.parent" class="text-gray-300">|</span>
-                                        <span v-if="result.type === 'student' && result.parent">
-                                            Orang Tua: <span class="font-medium text-gray-700">{{ result.parent }}</span>
+                                        <span v-if="result.type === 'santri'">
+                                            Kelas: <span class="font-medium text-gray-700">{{ result.kelas?.nama_kelas || '-' }}</span>
                                         </span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <span v-if="result.type === 'student'" 
-                                      class="text-xs px-2 py-1 rounded-full"
-                                      :class="getStatusBadge(result.status)">
-                                    {{ getStatusText(result.status) }}
-                                </span>
-                                <span v-else class="text-xs text-gray-400">
-                                    {{ result.phone || 'No HP: -' }}
-                                </span>
-                            </div>
+                            <span class="text-xs text-gray-400">Klik untuk detail →</span>
                         </div>
                     </div>
                 </div>
@@ -531,7 +429,7 @@ const getIconPath = (icon) => {
         <!-- ========================================== -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
             <div 
-                v-for="(stat, idx) in stats" 
+                v-for="(stat, idx) in statsCards" 
                 :key="idx" 
                 class="bg-white rounded-xl shadow-sm p-5 border border-gray-100 hover:shadow-md transition-all duration-200"
             >
@@ -539,15 +437,6 @@ const getIconPath = (icon) => {
                     <div class="flex-1">
                         <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">{{ stat.label }}</p>
                         <p class="text-2xl font-bold text-gray-800 mt-1">{{ stat.value }}</p>
-                        <div class="flex items-center mt-1">
-                            <span 
-                                class="text-xs font-medium"
-                                :class="stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'"
-                            >
-                                {{ stat.change }}
-                            </span>
-                            <span class="text-xs text-gray-400 ml-1">dari bulan lalu</span>
-                        </div>
                     </div>
                     <div class="w-12 h-12 rounded-lg flex items-center justify-center" :class="stat.iconBg">
                         <svg class="h-6 w-6" :class="stat.textColor" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -559,55 +448,42 @@ const getIconPath = (icon) => {
         </div>
 
         <!-- ========================================== -->
-        <!-- DAFTAR KELAS + DETAIL                     -->
+        <!-- DAFTAR KELAS                              -->
         <!-- ========================================== -->
         <div class="grid grid-cols-1 gap-6 mb-6">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
                     <div>
-                        <h3 class="text-sm font-semibold text-gray-800">📚 Manajemen Kelas</h3>
-                        <p class="text-xs text-gray-400 mt-0.5">Kelola santri dan guru per kelas</p>
+                        <h3 class="text-sm font-semibold text-gray-800">📚 Daftar Kelas</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Total {{ kelas.length }} kelas</p>
                     </div>
+                    <button @click="goToKelas" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Lihat Semua →
+                    </button>
                 </div>
 
                 <div class="divide-y divide-gray-100">
-                    <div v-for="cls in classSummary" :key="cls.name" 
-                         class="px-6 py-4 hover:bg-gray-50 transition">
+                    <div v-for="cls in kelas" :key="cls.id" 
+                         class="px-6 py-4 hover:bg-gray-50 transition cursor-pointer"
+                         @click="goToKelas">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                                    {{ cls.name }}
+                                    {{ cls.nama_kelas }}
                                 </div>
                                 <div>
                                     <div class="flex items-center gap-3">
-                                        <span class="text-sm font-semibold text-gray-800">{{ cls.name }}</span>
+                                        <span class="text-sm font-semibold text-gray-800">{{ cls.nama_kelas }}</span>
                                         <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                                            {{ cls.total }} Santri
-                                        </span>
-                                        <span class="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
-                                            {{ cls.teachers.length }} Guru
+                                            {{ cls.santris_count || 0 }} Santri
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-xs text-green-600">● {{ cls.active }} Aktif</span>
-                                        <span class="text-xs text-red-600">● {{ cls.inactive }} Non-Aktif</span>
+                                        <span class="text-xs text-gray-500">Tingkat {{ cls.tingkat }}</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button 
-                                    @click="openAddTeacherToClass(cls.name)"
-                                    class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 text-xs font-medium rounded-lg transition"
-                                >
-                                    + Guru
-                                </button>
-                                <button 
-                                    @click="openClassDetail(cls)"
-                                    class="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 text-xs font-medium rounded-lg transition"
-                                >
-                                    Detail →
-                                </button>
-                            </div>
+                            <span class="text-xs text-gray-400">Klik untuk detail →</span>
                         </div>
                     </div>
                 </div>
@@ -626,7 +502,7 @@ const getIconPath = (icon) => {
             </div>
 
             <div class="divide-y divide-gray-100">
-                <div v-for="activity in recentActivities" :key="activity.id" 
+                <div v-for="activity in recentActivities" :key="activity.name + activity.time" 
                      class="px-6 py-3 hover:bg-gray-50 transition flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-2 h-2 rounded-full flex-shrink-0"
@@ -638,7 +514,7 @@ const getIconPath = (icon) => {
                              }">
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-800">{{ activity.student }}</p>
+                            <p class="text-sm font-medium text-gray-800">{{ activity.name }}</p>
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-gray-500">{{ activity.action }}</span>
                                 <span class="text-xs text-gray-300">•</span>
@@ -646,12 +522,10 @@ const getIconPath = (icon) => {
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span v-if="activity.amount !== '-'" class="text-sm font-medium text-green-600">
-                            {{ activity.amount }}
-                        </span>
-                        <span class="text-xs text-gray-400">{{ activity.time }}</span>
-                    </div>
+                    <span class="text-xs text-gray-400">{{ activity.time }}</span>
+                </div>
+                <div v-if="recentActivities.length === 0" class="px-6 py-8 text-center text-gray-400">
+                    <p>Belum ada aktivitas</p>
                 </div>
             </div>
         </div>
@@ -682,8 +556,8 @@ const getIconPath = (icon) => {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs text-green-700 font-medium">Tingkat Kehadiran</p>
-                        <p class="text-sm font-bold text-green-800">94.2%</p>
+                        <p class="text-xs text-green-700 font-medium">Total Kelas</p>
+                        <p class="text-sm font-bold text-green-800">{{ stats.total_kelas || 0 }} Kelas</p>
                     </div>
                 </div>
             </div>
@@ -697,7 +571,7 @@ const getIconPath = (icon) => {
                     </div>
                     <div>
                         <p class="text-xs text-purple-700 font-medium">Total Guru</p>
-                        <p class="text-sm font-bold text-purple-800">{{ teachers.length }} Orang</p>
+                        <p class="text-sm font-bold text-purple-800">{{ stats.total_guru || 0 }} Orang</p>
                     </div>
                 </div>
             </div>
@@ -710,8 +584,8 @@ const getIconPath = (icon) => {
                         </svg>
                     </div>
                     <div>
-                        <p class="text-xs text-orange-700 font-medium">Jam Belajar</p>
-                        <p class="text-sm font-bold text-orange-800">2.400 Jam</p>
+                        <p class="text-xs text-orange-700 font-medium">Total Santri</p>
+                        <p class="text-sm font-bold text-orange-800">{{ stats.total_santri || 0 }} Santri</p>
                     </div>
                 </div>
             </div>
@@ -720,69 +594,83 @@ const getIconPath = (icon) => {
         <!-- ========================================== -->
         <!-- MODAL TAMBAH SANTRI                       -->
         <!-- ========================================== -->
-        <div v-if="showAddStudentModal" class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showAddStudentModal = false"></div>
+        <div v-if="showSantriModal" class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showSantriModal = false"></div>
             <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto p-6">
+                <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto p-6 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-6">
                         <div>
                             <h3 class="text-xl font-bold text-gray-800">📝 Tambah Santri Baru</h3>
                             <p class="text-sm text-gray-500 mt-0.5">Isi data santri dengan lengkap</p>
                         </div>
-                        <button @click="showAddStudentModal = false" class="p-2 hover:bg-gray-100 rounded-full transition">
+                        <button @click="showSantriModal = false" class="p-2 hover:bg-gray-100 rounded-full transition">
                             <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
-                    <form @submit.prevent="submitStudent" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
-                            <input v-model="newStudent.name" type="text" placeholder="Masukkan nama lengkap santri" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
-                        </div>
-
+                    <form @submit.prevent="submitSantri" class="space-y-4">
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Kelas <span class="text-red-500">*</span></label>
-                                <select v-model="newStudent.class" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                                    <option value="">Pilih Kelas</option>
-                                    <option v-for="cls in classOptions" :key="cls" :value="cls">{{ cls }}</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">NIS <span class="text-red-500">*</span></label>
+                                <input v-model="formSantri.nis" type="text" placeholder="Nomor Induk" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Usia <span class="text-red-500">*</span></label>
-                                <input v-model="newStudent.age" type="number" min="5" max="25" placeholder="Usia" 
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
+                                <input v-model="formSantri.nama" type="text" placeholder="Nama lengkap" 
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required />
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
-                                <select v-model="newStudent.gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="Laki-laki">Laki-laki</option>
-                                    <option value="Perempuan">Perempuan</option>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
+                                <select v-model="formSantri.jenis_kelamin" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                    <option value="">Pilih</option>
+                                    <option value="1">Laki-laki</option>
+                                    <option value="2">Perempuan</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                <select v-model="newStudent.status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="active">Aktif</option>
-                                    <option value="inactive">Non-Aktif</option>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kelas <span class="text-red-500">*</span></label>
+                                <select v-model="formSantri.kelas_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                    <option value="">Pilih Kelas</option>
+                                    <option v-for="k in kelas" :key="k.id" :value="k.id">
+                                        {{ k.nama_kelas }} (Tingkat {{ k.tingkat }})
+                                    </option>
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tempat Lahir</label>
+                                <input v-model="formSantri.tempat_lahir" type="text" placeholder="Tempat lahir" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Lahir</label>
+                                <input v-model="formSantri.tanggal_lahir" type="date" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Orang Tua <span class="text-gray-400 text-xs">(opsional)</span></label>
-                            <input v-model="newStudent.parent" type="text" placeholder="Masukkan nama orang tua" 
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                            <textarea v-model="formSantri.alamat" rows="2" placeholder="Alamat lengkap" 
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No HP</label>
+                            <input v-model="formSantri.no_hp" type="text" placeholder="Nomor handphone" 
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                         </div>
 
                         <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                            <button type="button" @click="showAddStudentModal = false" 
+                            <button type="button" @click="showSantriModal = false" 
                                     class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition">
                                 Batal
                             </button>
@@ -799,173 +687,101 @@ const getIconPath = (icon) => {
         <!-- ========================================== -->
         <!-- MODAL TAMBAH GURU                         -->
         <!-- ========================================== -->
-        <div v-if="showAddTeacherModal" class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showAddTeacherModal = false"></div>
+        <div v-if="showGuruModal" class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showGuruModal = false"></div>
             <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto p-6">
+                <div class="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-auto p-6 max-h-[90vh] overflow-y-auto">
                     <div class="flex items-center justify-between mb-6">
                         <div>
-                            <h3 class="text-xl font-bold text-gray-800">👨‍🏫 Tambah Guru Baru</h3>
+                            <h3 class="text-xl font-bold text-gray-800">👨‍🏫 Tambah Guru</h3>
                             <p class="text-sm text-gray-500 mt-0.5">Isi data guru dengan lengkap</p>
                         </div>
-                        <button @click="showAddTeacherModal = false" class="p-2 hover:bg-gray-100 rounded-full transition">
+                        <button @click="showGuruModal = false" class="p-2 hover:bg-gray-100 rounded-full transition">
                             <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
-                    <form @submit.prevent="submitTeacher" class="space-y-4">
+                    <form @submit.prevent="submitGuru" class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap <span class="text-red-500">*</span></label>
-                            <input v-model="newTeacher.name" type="text" placeholder="Masukkan nama lengkap guru" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required />
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Nama Lengkap <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                v-model="formGuru.nama" 
+                                type="text" 
+                                placeholder="Nama lengkap guru" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                                required 
+                            />
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Mata Pelajaran <span class="text-red-500">*</span></label>
-                            <input v-model="newTeacher.subject" type="text" placeholder="Masukkan mata pelajaran yang diajar" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required />
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                NIP <span class="text-gray-400 text-xs">(opsional)</span>
+                            </label>
+                            <input 
+                                v-model="formGuru.nip" 
+                                type="text" 
+                                placeholder="Nomor Induk Pegawai" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            />
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Kelas yang Diajar <span class="text-red-500">*</span></label>
-                            <select v-model="newTeacher.class" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
-                                <option value="">Pilih Kelas</option>
-                                <option v-for="cls in classOptions" :key="cls" :value="cls">{{ cls }}</option>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Jenis Kelamin <span class="text-red-500">*</span>
+                            </label>
+                            <select 
+                                v-model="formGuru.jenis_kelamin" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                                required
+                            >
+                                <option value="">Pilih</option>
+                                <option value="1">Laki-laki</option>
+                                <option value="2">Perempuan</option>
                             </select>
+                        </div>  
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                No HP <span class="text-gray-400 text-xs">(opsional)</span>
+                            </label>
+                            <input 
+                                v-model="formGuru.no_hp" 
+                                type="text" 
+                                placeholder="Nomor handphone" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" 
+                            />
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon <span class="text-gray-400 text-xs">(opsional)</span></label>
-                            <input v-model="newTeacher.phone" type="text" placeholder="Masukkan nomor telepon" 
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" />
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Alamat <span class="text-gray-400 text-xs">(opsional)</span>
+                            </label>
+                            <textarea 
+                                v-model="formGuru.alamat" 
+                                rows="2" 
+                                placeholder="Alamat lengkap guru" 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            ></textarea>
                         </div>
 
                         <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                            <button type="button" @click="showAddTeacherModal = false" 
-                                    class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition">
+                            <button 
+                                type="button" 
+                                @click="showGuruModal = false" 
+                                class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition"
+                            >
                                 Batal
                             </button>
-                            <button type="submit" :disabled="isSubmitting" 
-                                    class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ isSubmitting ? 'Menyimpan...' : 'Simpan Guru' }}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- MODAL DETAIL KELAS                        -->
-        <!-- ========================================== -->
-        <div v-if="showClassDetail && selectedClass" class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showClassDetail = false"></div>
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full mx-auto p-6 max-h-[90vh] overflow-y-auto">
-                    <div class="flex items-center justify-between mb-6 sticky top-0 bg-white z-10 pb-4 border-b">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800">📚 Detail Kelas {{ selectedClass.name }}</h3>
-                            <p class="text-sm text-gray-500 mt-0.5">Total {{ selectedClass.total }} Santri · {{ selectedClass.teachers.length }} Guru</p>
-                        </div>
-                        <button @click="showClassDetail = false" class="p-2 hover:bg-gray-100 rounded-full transition">
-                            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <!-- Daftar Guru -->
-                    <div class="mb-6">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-semibold text-gray-700">👨‍🏫 Guru Pengajar</h4>
-                            <button @click="openAddTeacherToClass(selectedClass.name)" 
-                                    class="text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-lg transition font-medium">
-                                + Tambah Guru
-                            </button>
-                        </div>
-                        <div v-if="selectedClass.teachers.length > 0" class="space-y-2">
-                            <div v-for="teacher in selectedClass.teachers" :key="teacher.id" 
-                                 class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-800">{{ teacher.name }}</p>
-                                    <p class="text-xs text-gray-500">{{ teacher.subject }}</p>
-                                </div>
-                                <span class="text-xs text-gray-400">{{ teacher.phone }}</span>
-                            </div>
-                        </div>
-                        <p v-else class="text-sm text-gray-400 text-center py-4">Belum ada guru yang mengajar di kelas ini</p>
-                    </div>
-
-                    <!-- Daftar Santri -->
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-semibold text-gray-700">👨‍🎓 Daftar Santri</h4>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs text-green-600">● {{ selectedClass.active }} Aktif</span>
-                                <span class="text-xs text-red-600">● {{ selectedClass.inactive }} Non-Aktif</span>
-                            </div>
-                        </div>
-                        <div v-if="selectedClass.students.length > 0" class="space-y-2 max-h-60 overflow-y-auto">
-                            <div v-for="student in selectedClass.students" :key="student.id" 
-                                 class="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-800">{{ student.name }}</p>
-                                    <p class="text-xs text-gray-500">{{ student.gender }} · {{ student.age }} tahun</p>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="text-xs text-gray-400">{{ student.parent }}</span>
-                                    <span class="text-xs px-2 py-0.5 rounded-full" :class="getStatusBadge(student.status)">
-                                        {{ getStatusText(student.status) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <p v-else class="text-sm text-gray-400 text-center py-4">Belum ada santri di kelas ini</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================== -->
-        <!-- MODAL TAMBAH GURU KE KELAS                -->
-        <!-- ========================================== -->
-        <div v-if="showAddTeacherToClassModal" class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="showAddTeacherToClassModal = false"></div>
-            <div class="flex items-center justify-center min-h-screen p-4">
-                <div class="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto p-6">
-                    <div class="flex items-center justify-between mb-6">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800">➕ Tambah Guru ke Kelas</h3>
-                            <p class="text-sm text-gray-500 mt-0.5">Kelas: <span class="font-semibold">{{ teacherToClass.class }}</span></p>
-                        </div>
-                        <button @click="showAddTeacherToClassModal = false" class="p-2 hover:bg-gray-100 rounded-full transition">
-                            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    <form @submit.prevent="submitTeacherToClass" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Guru <span class="text-red-500">*</span></label>
-                            <select v-model="teacherToClass.teacherId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" required>
-                                <option value="">Pilih Guru</option>
-                                <option v-for="teacher in teachers" :key="teacher.id" :value="teacher.id">
-                                    {{ teacher.name }} - {{ teacher.subject }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
-                            <button type="button" @click="showAddTeacherToClassModal = false" 
-                                    class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition">
-                                Batal
-                            </button>
-                            <button type="submit" :disabled="isSubmitting" 
-                                    class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                                {{ isSubmitting ? 'Memproses...' : 'Tambahkan' }}
+                            <button 
+                                type="submit" 
+                                :disabled="isSubmitting" 
+                                class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {{ isSubmitting ? 'Menyimpan...' : 'Simpan' }}
                             </button>
                         </div>
                     </form>

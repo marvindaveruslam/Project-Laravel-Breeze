@@ -33,12 +33,27 @@ const santris = ref(props.santris || []);
 const kelasList = ref(props.kelas || []);
 
 // ============================================
-// STATISTIK OTOMATIS
+// FUNGSI HELPER UNTUK JENIS KELAMIN
+// ============================================
+const isLakiLaki = (val) => {
+    if (val === null || val === undefined) return false;
+    const str = String(val).toLowerCase().trim();
+    return ['1', 'l', 'laki', 'laki-laki', 'laki laki', 'male', 'm'].includes(str);
+};
+
+const isPerempuan = (val) => {
+    if (val === null || val === undefined) return false;
+    const str = String(val).toLowerCase().trim();
+    return ['2', 'p', 'perempuan', 'female', 'f'].includes(str);
+};
+
+// ============================================
+// STATISTIK OTOMATIS - PERBAIKAN
 // ============================================
 const stats = computed(() => {
     const totalSantri = santris.value.length;
-    const lakiLaki = santris.value.filter(s => s.jenis_kelamin === 'L').length;
-    const perempuan = santris.value.filter(s => s.jenis_kelamin === 'P').length;
+    const lakiLaki = santris.value.filter(s => isLakiLaki(s.jenis_kelamin)).length;
+    const perempuan = santris.value.filter(s => isPerempuan(s.jenis_kelamin)).length;
     
     // Hitung berdasarkan kelas
     const kelasCount = {};
@@ -46,6 +61,17 @@ const stats = computed(() => {
         const namaKelas = s.kelas?.nama_kelas || 'Tanpa Kelas';
         kelasCount[namaKelas] = (kelasCount[namaKelas] || 0) + 1;
     });
+    
+    // Debug
+    console.log('📊 STATISTIK DATA SANTRI:');
+    console.log('Total:', totalSantri);
+    console.log('Laki-laki:', lakiLaki);
+    console.log('Perempuan:', perempuan);
+    console.log('Data mentah:', santris.value.map(s => ({
+        nama: s.nama,
+        jenis_kelamin: s.jenis_kelamin,
+        tipe: typeof s.jenis_kelamin
+    })));
     
     return {
         totalSantri,
@@ -113,15 +139,39 @@ const totalPages = computed(() => {
 });
 
 // ============================================
-// HELPERS
+// HELPERS - PERBAIKAN
 // ============================================
 const getInitials = (name) => {
     if (!name) return 'S';
     return name.split(' ').map(word => word[0]).join('').toUpperCase();
 };
 
+// ✅ PERBAIKAN: Support multiple format
 const getJenisKelaminLabel = (jk) => {
-    return jk === 'L' ? 'Laki-laki' : 'Perempuan';
+    if (jk === null || jk === undefined || jk === '') {
+        return '-';
+    }
+    
+    if (isLakiLaki(jk)) {
+        return 'Laki-laki';
+    }
+    if (isPerempuan(jk)) {
+        return 'Perempuan';
+    }
+    
+    console.warn('⚠️ Nilai jenis_kelamin tidak dikenal:', jk);
+    return String(jk);
+};
+
+// ✅ PERBAIKAN: Class binding support multiple format
+const getJenisKelaminClass = (jk) => {
+    if (isLakiLaki(jk)) {
+        return 'text-blue-600';
+    }
+    if (isPerempuan(jk)) {
+        return 'text-pink-600';
+    }
+    return 'text-gray-600';
 };
 
 const getKelasName = (kelasId) => {
@@ -488,8 +538,9 @@ watch(() => props.flash, (newFlash) => {
                                     {{ item.nama }}
                                 </div>
                             </td>
+                            <!-- ✅ PERBAIKAN: Pakai fungsi getJenisKelaminClass -->
                             <td class="px-6 py-4 text-sm">
-                                <span :class="item.jenis_kelamin === 'L' ? 'text-blue-600' : 'text-pink-600'">
+                                <span :class="getJenisKelaminClass(item.jenis_kelamin)">
                                     {{ getJenisKelaminLabel(item.jenis_kelamin) }}
                                 </span>
                             </td>
@@ -670,8 +721,8 @@ watch(() => props.flash, (newFlash) => {
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">Pilih</option>
-                                <option value="L">Laki-laki</option>
-                                <option value="P">Perempuan</option>
+                                <option value="1">Laki-laki</option>
+                                <option value="2">Perempuan</option>
                             </select>
                         </div>
 
