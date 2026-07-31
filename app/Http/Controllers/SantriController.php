@@ -18,7 +18,7 @@ class SantriController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('Santri/Index', [
+        return Inertia::render('Dashboard/Santri/Index', [
             'santris' => $santris,
         ]);
     }
@@ -32,7 +32,7 @@ class SantriController extends Controller
             ->orderBy('nama_kelas')
             ->get();
 
-        return Inertia::render('Santri/Create', [
+        return Inertia::render('Dashboard/Santri/index', [
             'kelas' => $kelas,
         ]);
     }
@@ -68,7 +68,7 @@ class SantriController extends Controller
     {
         $santri->load('kelas');
 
-        return Inertia::render('Santri/Show', [
+        return Inertia::render('Dashboard/Santri/Index', [
             'santri' => $santri,
         ]);
     }
@@ -82,7 +82,7 @@ class SantriController extends Controller
             ->orderBy('nama_kelas')
             ->get();
 
-        return Inertia::render('Santri/Edit', [
+        return Inertia::render('Dashboard/Santri/Index', [
             'santri' => $santri,
             'kelas'  => $kelas,
         ]);

@@ -54,7 +54,12 @@ class DashboardController extends Controller
 
     public function santri(Request $request): Response
     {
-        return Inertia::render('Dashboard/Santri/Index');
+        $santris = Santri::with('kelas')
+            ->latest()
+            ->get();
+        return Inertia::render('Dashboard/Santri/Index', [
+            'santris' => $santris,
+        ]);
     }
     public function guru(Request $request): Response
     {
