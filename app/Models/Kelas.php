@@ -15,4 +15,9 @@ class Kelas extends Model
 {
     return $this->hasMany(Santri::class);
 }
+    public function absensis()
+{
+    return $this->hasMany(Absensi::class);
+}
+
 }
