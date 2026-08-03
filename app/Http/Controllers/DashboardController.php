@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\Guru;
+use App\Models\Absensi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,6 +34,28 @@ class DashboardController extends Controller
             ->get();
         $totalKelas = $kelas->count();
 
+        // Data Absensi Hari Ini
+        $totalAbsensiHariIni = Absensi::whereDate('tanggal', today())->count();
+
+        $hadir = Absensi::whereDate('tanggal', today())
+            ->where('status', 'hadir')
+            ->count();
+
+        $izin = Absensi::whereDate('tanggal', today())
+            ->where('status', 'izin')
+            ->count();
+
+        $sakit = Absensi::whereDate('tanggal', today())
+            ->where('status', 'sakit')
+            ->count();
+
+        $alpha = Absensi::whereDate('tanggal', today())
+            ->where('status', 'alpha')
+            ->count();
+
+        $persentaseHadir = $totalSantri > 0
+        ? round(($hadir / $totalSantri) * 100, 2)
+        : 0;
         // Aktivitas Terbaru (gabungan dari santri dan guru)
         $recentActivities = collect();
 
@@ -73,6 +96,13 @@ class DashboardController extends Controller
                 'perempuan' => $perempuan,
                 'total_guru' => $totalGuru,
                 'total_kelas' => $totalKelas,
+
+                'absensi_hari_ini' => $totalAbsensiHariIni,
+                'hadir' => $hadir,
+                'izin' => $izin,
+                'sakit' => $sakit,
+                'alpha' => $alpha,
+                'persentase_hadir' => $persentaseHadir,
             ],
             'recent_activities' => $recentActivities,
         ]);
@@ -126,6 +156,28 @@ class DashboardController extends Controller
                 'rata_rata' => $totalKelas > 0 ? round($totalSantri / $totalKelas) : 0,
                 'tingkat' => $tingkat,
             ]
+        ]);
+    }
+
+    /**
+     * Halaman Data absensi
+     */
+    public function absensi(Request $request): Response
+    {
+        $absensis = Absensi::with(['santri', 'kelas', 'guru'])
+            ->latest()
+            ->paginate(10);
+
+        $kelas = Kelas::orderBy('tingkat')
+            ->orderBy('nama_kelas')
+            ->get();
+
+        $gurus = Guru::orderBy('nama')->get();
+
+        return Inertia::render('Dashboard/Absensi/Index', [
+            'absensis' => $absensis,
+            'kelas' => $kelas,
+            'gurus' => $gurus,
         ]);
     }
 

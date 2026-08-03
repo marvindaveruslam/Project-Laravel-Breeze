@@ -21,4 +21,8 @@ class Santri extends Model
 {
     return $this->belongsTo(Kelas::class);
 }
+    public function absensis()
+{
+    return $this->hasMany(Absensi::class);
+}
 }
