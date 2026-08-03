@@ -18,7 +18,7 @@ return new class extends Migration
                 ->constrained()
                 ->cascadeOnDelete();
 
-            $table->foreignId('kelas_id')
+            $table->foreignId('kelas_siswa_id')
                 ->constrained()
                 ->cascadeOnDelete();
 
@@ -27,6 +27,8 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->date('tanggal');
+
+            $table->string('hari');
 
             $table->tinyInteger('status');
 
