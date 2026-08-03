@@ -18,8 +18,14 @@ class SantriController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('Santri/Index', [
+        // ✅ AMBIL DATA KELAS UNTUK FILTER DAN DROPDOWN
+        $kelas = Kelas::orderBy('tingkat')
+            ->orderBy('nama_kelas')
+            ->get();
+
+        return Inertia::render('Dashboard/Santri/Index', [
             'santris' => $santris,
+            'kelas' => $kelas, // <-- INI YANG HARUS DITAMBAHKAN!
         ]);
     }
 
@@ -32,8 +38,10 @@ class SantriController extends Controller
             ->orderBy('nama_kelas')
             ->get();
 
-        return Inertia::render('Santri/Create', [
+        return Inertia::render('Dashboard/Santri/Index', [
             'kelas' => $kelas,
+            'showModal' => true, // Flag untuk buka modal otomatis
+            'isEditing' => false,
         ]);
     }
 
@@ -42,7 +50,7 @@ class SantriController extends Controller
      */
     public function store(Request $request)
     {
-                $validated = $request->validate([
+        $validated = $request->validate([
             'nis'             => 'required|string|max:50|unique:santris,nis',
             'nama'            => 'required|string|max:255',
             'jenis_kelamin'   => 'required|in:1,2',
@@ -56,9 +64,8 @@ class SantriController extends Controller
         Santri::create($validated);
 
         return redirect()
-            ->route('santri.index')
+            ->route('dashboard.santri')
             ->with('success', 'Data santri berhasil ditambahkan.');
-
     }
 
     /**
@@ -68,7 +75,7 @@ class SantriController extends Controller
     {
         $santri->load('kelas');
 
-        return Inertia::render('Santri/Show', [
+        return Inertia::render('Dashboard/Santri/Show', [
             'santri' => $santri,
         ]);
     }
@@ -82,9 +89,11 @@ class SantriController extends Controller
             ->orderBy('nama_kelas')
             ->get();
 
-        return Inertia::render('Santri/Edit', [
+        return Inertia::render('Dashboard/Santri/Index', [
             'santri' => $santri,
-            'kelas'  => $kelas,
+            'kelas' => $kelas,
+            'showModal' => true,
+            'isEditing' => true,
         ]);
     }
 
@@ -107,9 +116,8 @@ class SantriController extends Controller
         $santri->update($validated);
 
         return redirect()
-            ->route('santri.index')
+            ->route('dashboard.santri')
             ->with('success', 'Data santri berhasil diperbarui.');
-
     }
 
     /**
@@ -120,7 +128,7 @@ class SantriController extends Controller
         $santri->delete();
 
         return redirect()
-            ->route('santri.index')
+            ->route('dashboard.santri')
             ->with('success', 'Data santri berhasil dihapus.');
     }
 }

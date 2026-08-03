@@ -5,6 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\KelasController;
 use App\Http\Controllers\SantriController;
 use App\Http\Controllers\GuruController;
+use App\Http\Controllers\AbsensiController; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,20 +26,25 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+
 Route::middleware('auth')->prefix('dashboard')->group(function () {
+    
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
     Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
     Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
     Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
+
+   
+    Route::get('absensi', [AbsensiController::class, 'index'])->name('absensi.index');
+    Route::post('absensi/masuk', [AbsensiController::class, 'storeMasuk'])->name('absensi.masuk');
+    Route::post('absensi/pulang', [AbsensiController::class, 'storePulang'])->name('absensi.pulang');
+   
 });
 
 
-
-
-
 Route::middleware(['auth'])->group(function () {
-    Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas',]);
+    Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
     Route::resource('santri', SantriController::class);
     Route::resource('guru', GuruController::class);
 });
