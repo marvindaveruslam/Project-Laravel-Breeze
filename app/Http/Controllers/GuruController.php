@@ -15,7 +15,7 @@ class GuruController extends Controller
     {
         $gurus = Guru::latest()->get();
 
-        return Inertia::render('Guru/Index', [
+        return Inertia::render('Dashboard/Guru/Index', [
             'gurus' => $gurus,
         ]);
     }
@@ -25,7 +25,7 @@ class GuruController extends Controller
      */
     public function create()
     {
-        return Inertia::render('Guru/Create');
+        return Inertia::render('Dashboard/Guru/index');
     }
 
     /**
@@ -55,7 +55,7 @@ class GuruController extends Controller
      */
     public function show(Guru $guru)
     {
-        return Inertia::render('Guru/Show', [
+        return Inertia::render('Dashboard/Guru/index', [
             'guru' => $guru,
         ]);
     }
@@ -65,7 +65,7 @@ class GuruController extends Controller
      */
     public function edit(Guru $guru)
     {
-        return Inertia::render('Guru/Edit', [
+        return Inertia::render('Dashboard/Guru/index', [
             'guru' => $guru,
         ]);
     }
