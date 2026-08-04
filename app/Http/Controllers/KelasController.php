@@ -18,7 +18,7 @@ class KelasController extends Controller
         $totalSantri = Santri::count();
         $totalKelas = Kelas::count();
 
-        return Inertia::render('Dashboard/Siswa/Index', [
+        return Inertia::render('Dashboard/Santri/Index', [
             'santri' => $santri,
             'stats' => [
                 'total_santri' => $totalSantri,
@@ -32,7 +32,7 @@ class KelasController extends Controller
     {
         $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
 
-        return Inertia::render('Dashboard/Siswa/Create', [
+        return Inertia::render('Dashboard/Santri/Create', [
             'kelas' => $kelas
         ]);
     }
@@ -41,13 +41,13 @@ class KelasController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'nis' => 'required|string|max:20|unique:siswas,nis',
+            'nis' => 'required|string|max:20|unique:santris,nis',
             'kelas_id' => 'required|exists:kelas,id',
             'alamat' => 'nullable|string',
             'no_hp' => 'nullable|string|max:15',
         ]);
 
-        Siswa::create($validated);
+        Santri::create($validated);
 
         return redirect()
             ->route('dashboard.santri')
