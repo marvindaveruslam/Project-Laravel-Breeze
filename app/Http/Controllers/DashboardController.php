@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\Guru;
+use App\Models\KelasSiswa;
 use App\Models\Absensi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -34,6 +35,12 @@ class DashboardController extends Controller
             ->get();
         $totalKelas = $kelas->count();
 
+        // data kelas siswa
+        $kelasSiswa = Kelas::with('santris')->get();
+
+        //data kelas guru
+        $kelasGuru = Kelas::with('gurus')->get();
+
         // Data Absensi Hari Ini
         $totalAbsensiHariIni = Absensi::whereDate('tanggal', today())->count();
 
@@ -50,7 +57,7 @@ class DashboardController extends Controller
             ->count();
 
         $alpha = Absensi::whereDate('tanggal', today())
-            ->where('status', 'alpha')
+            ->where('status', 'tanpa keterangan')
             ->count();
 
         $persentaseHadir = $totalSantri > 0
@@ -156,6 +163,41 @@ class DashboardController extends Controller
                 'rata_rata' => $totalKelas > 0 ? round($totalSantri / $totalKelas) : 0,
                 'tingkat' => $tingkat,
             ]
+        ]);
+    }
+
+    /**
+     * Halaman Data Siswa per Kelas
+     */
+    public function kelasSiswa(Kelas $kelas): Response
+    {
+        $kelas->load('santris');
+
+        return Inertia::render('Dashboard/KelasSiswa/Index', [
+            'kelas' => $kelas,
+            'santris' => $kelas->santris,
+            'statistik' => [
+                'total_santri' => $kelas->santris->count(),
+                'laki_laki' => $kelas->santris
+                    ->where('jenis_kelamin', 'L')
+                    ->count(),
+                'perempuan' => $kelas->santris
+                    ->where('jenis_kelamin', 'P')
+                    ->count(),
+            ]
+        ]);
+    }
+
+    /**
+     * Halaman Data Kelas Guru
+     */
+    public function kelasGuru(Kelas $kelas): Response
+    {
+        $kelas->load('gurus');
+
+        return Inertia::render('Dashboard/KelasGuru/Index', [
+            'kelas' => $kelas,
+            'gurus' => $kelas->gurus,
         ]);
     }
 
