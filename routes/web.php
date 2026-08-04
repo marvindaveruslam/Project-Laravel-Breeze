@@ -6,6 +6,7 @@ use App\Http\Controllers\KelasController;
 use App\Http\Controllers\SantriController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\KelasSiswaController;
+use App\Http\Controllers\KelasGuruController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\SiswaController;
 use Illuminate\Foundation\Application;
@@ -36,7 +37,8 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
     Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
     Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
-    Route::get('kelas_siswa', [DashboardController::class, 'kelasSiswa'])->name('dashboard.kelas_siswa');
+    Route::get('kelas/{kelas}/siswa', [DashboardController::class, 'kelasSiswa'])->name('dashboard.kelas_siswa');
+    Route::get('kelas/{kelas}/guru', [DashboardController::class, 'kelasGuru'])->name('dashboard.kelas_guru');
     Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
 
 });
@@ -46,7 +48,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
     Route::resource('santri', SantriController::class);
     Route::resource('guru', GuruController::class);
-    Route::resource('kelas_siswa', KelasSiswaController::class);
+    Route::resource('kelas/{kelas}/siswa', KelasSiswaController::class);
+    Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
     Route::resource('absensi', AbsensiController::class);
     Route::resource('siswa', SiswaController::class)->middleware('auth');
 });
