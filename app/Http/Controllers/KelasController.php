@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Siswa;
-use App\Models\Kelas;
+use App\Models\KelasSiswa;
+use App\Models\KelasGuru;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
