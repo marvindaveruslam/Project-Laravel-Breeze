@@ -18,6 +18,7 @@ return new class extends Migration
             $table->tinyInteger('jenis_kelamin');
             $table->string('no_hp')->nullable();
             $table->text('alamat')->nullable();
+            $table->string('mata_pelajaran');
             $table->timestamps();
         });
     }

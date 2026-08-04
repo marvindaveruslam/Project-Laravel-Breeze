@@ -15,6 +15,7 @@ class Guru extends Model
         'jenis_kelamin',
         'no_hp',
         'alamat',
+        'mata_pelajaran',
     ];
 
     public function absensis()
