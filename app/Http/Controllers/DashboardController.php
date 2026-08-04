@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\Guru;
-use App\Models\KelasSiswa;
+use App\Models\KelasSantri;
+use App\Models\Kelasguru;
 use App\Models\Absensi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -35,8 +36,8 @@ class DashboardController extends Controller
             ->get();
         $totalKelas = $kelas->count();
 
-        // data kelas siswa
-        $kelasSiswa = Kelas::withCount('santris')->get();
+        // data kelas santri
+        $kelasSantri = Kelas::withCount('santris')->get();
 
         //data kelas guru
         $kelasGuru = Kelas::withCount('gurus')->get();
@@ -169,7 +170,7 @@ class DashboardController extends Controller
     /**
      * Halaman Data Siswa per Kelas
      */
-    public function kelasSiswa(Kelas $kelas): Response
+    public function kelasSantri(Kelas $kelas): Response
     {
         $kelas->load('santris');
 
