@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\KelasGuru;
+use App\Models\Guru;
 use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class GuruController extends Controller
+class KelasGuruController extends Controller
 {
     /**
      * Display a listing of the resource.
