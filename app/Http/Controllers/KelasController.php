@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\KelasSantri;
+use App\Models\Santri;
 use App\Models\KelasGuru;
 use App\Models\Siswa;
 use App\Models\Kelas;
