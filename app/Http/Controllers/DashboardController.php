@@ -36,10 +36,10 @@ class DashboardController extends Controller
         $totalKelas = $kelas->count();
 
         // data kelas siswa
-        $kelasSiswa = Kelas::with('santris')->get();
+        $kelasSiswa = Kelas::withCount('santris')->get();
 
         //data kelas guru
-        $kelasGuru = Kelas::with('gurus')->get();
+        $kelasGuru = Kelas::withCount('gurus')->get();
 
         // Data Absensi Hari Ini
         $totalAbsensiHariIni = Absensi::whereDate('tanggal', today())->count();

@@ -19,11 +19,11 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->foreignId('kelas_siswa_id')
-                ->constrained()
+                ->constrained('kelas_siswa')
                 ->cascadeOnDelete();
 
-            $table->foreignId('guru_id')
-                ->constrained()
+            $table->foreignId('kelas_guru_id')
+                ->constrained('kelas_guru')
                 ->cascadeOnDelete();
 
             $table->date('tanggal');

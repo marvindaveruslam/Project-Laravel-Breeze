@@ -29,14 +29,14 @@ class Absensi extends Model
         return $this->belongsTo(Santri::class);
     }
 
-    public function kelas()
+    public function kelasSiswa()
     {
-        return $this->belongsTo(Kelas::class);
+        return $this->belongsTo(KelasSiswa::class);
     }
 
-    public function guru()
+    public function kelasGuru()
     {
-        return $this->belongsTo(Guru::class);
+        return $this->belongsTo(KelasGuru::class);
     }
 
 }

@@ -12,12 +12,18 @@ class Kelas extends Model
     ];
 
     public function santris()
-{
-    return $this->hasMany(Santri::class);
-}
+    {
+        return $this->hasMany(Santri::class);
+    }
+
+    public function gurus()
+    {
+        return $this->hasMany(Guru::class);
+    }
+
     public function absensis()
-{
-    return $this->hasMany(Absensi::class);
-}
+    {
+        return $this->hasMany(Absensi::class);
+    }
 
 }
