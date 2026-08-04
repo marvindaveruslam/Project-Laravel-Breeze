@@ -2,73 +2,91 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Siswa;
 use App\Models\Kelas;
-use App\Models\Santri;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class KelasController extends Controller
+class SiswaController extends Controller
 {
     public function index()
     {
-        $kelas = Kelas::withCount('santris')
-            ->orderBy('tingkat')
-            ->orderBy('nama_kelas')
+        $siswa = Siswa::with('kelas')
+            ->orderBy('nama')
             ->get();
 
-        $totalSantri = Santri::count();
-        $totalKelas = $kelas->count();
+        $totalSiswa = Siswa::count();
+        $totalKelas = Kelas::count();
 
-        return Inertia::render('Dashboard/Classes/SingleClass', [
-            'kelas' => $kelas,
+        return Inertia::render('Dashboard/Siswa/Index', [
+            'siswa' => $siswa,
             'stats' => [
+                'total_siswa' => $totalSiswa,
                 'total_kelas' => $totalKelas,
-                'total_santri' => $totalSantri,
-                'rata_rata_santri' => $totalKelas > 0 ? round($totalSantri / $totalKelas, 1) : 0,
+                'rata_rata_siswa' => $totalKelas > 0 ? round($totalSiswa / $totalKelas, 1) : 0,
             ]
+        ]);
+    }
+
+    public function create()
+    {
+        $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
+
+        return Inertia::render('Dashboard/Siswa/Create', [
+            'kelas' => $kelas
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_kelas' => 'required|string|max:100',
-            'tingkat' => 'required|integer|min:1|max:6',
+            'nama' => 'required|string|max:255',
+            'nis' => 'required|string|max:20|unique:siswas,nis',
+            'kelas_id' => 'required|exists:kelas,id',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
         ]);
 
-        Kelas::create($validated);
+        Siswa::create($validated);
 
         return redirect()
-            ->route('dashboard.classes')
-            ->with('success', 'Data kelas berhasil ditambahkan.');
+            ->route('dashboard.siswa')
+            ->with('success', 'Data siswa berhasil ditambahkan.');
     }
 
-    public function update(Request $request, Kelas $kelas)
+    public function edit(Siswa $siswa)
+    {
+        $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
+
+        return Inertia::render('Dashboard/Siswa/Edit', [
+            'siswa' => $siswa,
+            'kelas' => $kelas
+        ]);
+    }
+
+    public function update(Request $request, Siswa $siswa)
     {
         $validated = $request->validate([
-            'nama_kelas' => 'required|string|max:100',
-            'tingkat' => 'required|integer|min:1|max:6',
+            'nama' => 'required|string|max:255',
+            'nis' => 'required|string|max:20|unique:siswas,nis,' . $siswa->id,
+            'kelas_id' => 'required|exists:kelas,id',
+            'alamat' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:15',
         ]);
 
-        $kelas->update($validated);
+        $siswa->update($validated);
 
         return redirect()
-            ->route('dashboard.classes')
-            ->with('success', 'Data kelas berhasil diperbarui.');
+            ->route('dashboard.siswa')
+            ->with('success', 'Data siswa berhasil diperbarui.');
     }
 
-    public function destroy(Kelas $kelas)
+    public function destroy(Siswa $siswa)
     {
-        if ($kelas->santris()->count() > 0) {
-            return redirect()
-                ->route('dashboard.classes')
-                ->with('error', 'Kelas tidak dapat dihapus karena masih memiliki santri.');
-        }
-
-        $kelas->delete();
+        $siswa->delete();
 
         return redirect()
-            ->route('dashboard.classes')
-            ->with('success', 'Data kelas berhasil dihapus.');
+            ->route('dashboard.siswa')
+            ->with('success', 'Data siswa berhasil dihapus.');
     }
 }
