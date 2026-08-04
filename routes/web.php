@@ -7,7 +7,6 @@ use App\Http\Controllers\SantriController;
 use App\Http\Controllers\GuruController;
 use App\Http\Controllers\KelasSiswaController;
 use App\Http\Controllers\AbsensiController;
-use App\Http\Controllers\SiswaController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,7 +47,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('guru', GuruController::class);
     Route::resource('kelas_siswa', KelasSiswaController::class);
     Route::resource('absensi', AbsensiController::class);
-    Route::resource('siswa', SiswaController::class)->middleware('auth');
+  
 });
 
 require __DIR__.'/auth.php';
