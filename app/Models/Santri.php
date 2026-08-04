@@ -18,11 +18,17 @@ class Santri extends Model
     ];
 
     public function kelas()
-{
+    {
     return $this->belongsTo(Kelas::class);
-}
+    }
+
+    public function kelasSantris()
+    {
+        return $this->hasMany(KelasSantri::class);
+    }
+
     public function absensis()
-{
+    {
     return $this->hasMany(Absensi::class);
-}
+    }
 }

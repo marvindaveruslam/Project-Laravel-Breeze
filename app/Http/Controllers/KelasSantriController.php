@@ -3,24 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\KelasSantri;
-use App\Models\KelasGuru;
-use App\Models\Siswa;
 use App\Models\Kelas;
+use App\Models\Santri; // <-- TAMBAHKAN INI
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class KelasController extends Controller
+class KelasSantriController extends Controller
 {
     public function index()
     {
+        // Mengambil semua data santri beserta nama kelasnya (pakai with)
         $santri = Santri::with('kelas')
             ->orderBy('nama')
             ->get();
 
+        // Menghitung statistik (seperti di KelasController)
         $totalSantri = Santri::count();
         $totalKelas = Kelas::count();
 
-        return Inertia::render('Dashboard/Siswa/Index', [
+        // WAJIB pakai Inertia::render, BUKAN return view()
+        return Inertia::render('Kelas/Santri/Index', [
             'santri' => $santri,
             'stats' => [
                 'total_santri' => $totalSantri,
@@ -32,9 +34,10 @@ class KelasController extends Controller
 
     public function create()
     {
+        // Kirim data kelas untuk dropdown pilihan kelas di frontend
         $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
 
-        return Inertia::render('Dashboard/Siswa/Create', [
+        return Inertia::render('Kelas/Santri/Create', [
             'kelas' => $kelas
         ]);
     }
@@ -43,24 +46,31 @@ class KelasController extends Controller
     {
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
-            'nis' => 'required|string|max:20|unique:siswas,nis',
+            'nis' => 'required|string|max:20|unique:santris,nis',
             'kelas_id' => 'required|exists:kelas,id',
             'alamat' => 'nullable|string',
             'no_hp' => 'nullable|string|max:15',
         ]);
 
-        Siswa::create($validated);
+        Santri::create($validated);
 
         return redirect()
-            ->route('dashboard.santri')
-            ->with('success', 'Data santri berhasil ditambahkan.');
+            ->route('kelas.santri')
+            ->with('success', 'Data santri berhasil ditambahkan!');
+    }
+
+    public function show(Santri $santri)
+    {
+        return Inertia::render('Kelas/Santri/Show', [
+            'santri' => $santri
+        ]);
     }
 
     public function edit(Santri $santri)
     {
         $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
 
-        return Inertia::render('Dashboard/Santri/Edit', [
+        return Inertia::render('Kelas/Santri/Edit', [
             'santri' => $santri,
             'kelas' => $kelas
         ]);
@@ -79,16 +89,21 @@ class KelasController extends Controller
         $santri->update($validated);
 
         return redirect()
-            ->route('dashboard.santri')
-            ->with('success', 'Data santri berhasil diperbarui.');
+            ->route('kelas.santri')
+            ->with('success', 'Data santri berhasil diperbarui!');
     }
 
     public function destroy(Santri $santri)
     {
+        // (Opsional) Cek jika santri punya relasi nilai/absensi, cegah hapus
+        // if ($santri->nilais()->count() > 0) {
+        //     return redirect()->route('kelas.santri')->with('error', 'Tidak bisa dihapus karena masih ada data nilai.');
+        // }
+
         $santri->delete();
 
         return redirect()
-            ->route('dashboard.santri')
-            ->with('success', 'Data santri berhasil dihapus.');
+            ->route('kelas.santri')
+            ->with('success', 'Data santri berhasil dihapus!');
     }
 }

@@ -13,7 +13,7 @@ class Absensi extends Model
 
     protected $fillable = [
         'santri_id',
-        'kelas_siswa_id',
+        'kelas_santri_id',
         'guru_id',
         'tanggal',
         'status',
@@ -29,9 +29,9 @@ class Absensi extends Model
         return $this->belongsTo(Santri::class);
     }
 
-    public function kelasSiswa()
+    public function kelasSantri()
     {
-        return $this->belongsTo(KelasSiswa::class);
+        return $this->belongsTo(KelasSantri::class);
     }
 
     public function kelasGuru()
