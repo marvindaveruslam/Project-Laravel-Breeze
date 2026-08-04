@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Guru;
+use App\Models\KelasGuru;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
