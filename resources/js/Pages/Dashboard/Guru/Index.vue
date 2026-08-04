@@ -62,6 +62,7 @@ const formData = ref({
     jenis_kelamin: '',
     no_hp: '',
     alamat: '',
+    mata_pelajaran: '', // ✅ Tambahkan ini
 });
 
 // ============================================
@@ -74,7 +75,8 @@ const filteredGurus = computed(() => {
     const query = searchQuery.value.toLowerCase();
     return gurus.value.filter(item =>
         item.nama?.toLowerCase().includes(query) ||
-        item.nip?.toLowerCase().includes(query)
+        item.nip?.toLowerCase().includes(query) ||
+        item.mata_pelajaran?.toLowerCase().includes(query) // ✅ Tambahkan pencarian mata pelajaran
     );
 });
 
@@ -123,6 +125,7 @@ const resetForm = () => {
         jenis_kelamin: '',
         no_hp: '',
         alamat: '',
+        mata_pelajaran: '', // ✅ Reset juga
     };
 };
 
@@ -144,6 +147,7 @@ const editGuru = (id) => {
             jenis_kelamin: item.jenis_kelamin || '',
             no_hp: item.no_hp || '',
             alamat: item.alamat || '',
+            mata_pelajaran: item.mata_pelajaran || '', // ✅ Ambil data mata pelajaran
         };
         showModal.value = true;
     }
@@ -161,16 +165,12 @@ const saveGuru = () => {
     isLoading.value = true;
 
     if (isEdit.value) {
-        // ✅ SAMA SEPERTI KELAS: PAKAI ROUTE GURU.UPDATE
         router.put(route('guru.update', currentId.value), formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
                 isLoading.value = false;
-                
-                // ✅ Redirect ke dashboard.guru (sama seperti kelas)
                 router.get(route('dashboard.guru'));
-                
                 Toast.fire({
                     icon: 'success',
                     title: '✨ Data guru berhasil diperbarui'
@@ -179,7 +179,6 @@ const saveGuru = () => {
             onError: (errors) => {
                 console.error('Error update:', errors);
                 isLoading.value = false;
-                
                 let errorMsg = '❌ Gagal memperbarui data!';
                 if (errors && typeof errors === 'object') {
                     const messages = Object.values(errors).flat();
@@ -194,16 +193,12 @@ const saveGuru = () => {
             }
         });
     } else {
-        // ✅ SAMA SEPERTI KELAS: PAKAI ROUTE GURU.STORE
         router.post(route('guru.store'), formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
                 isLoading.value = false;
-                
-                // ✅ Redirect ke dashboard.guru (sama seperti kelas)
                 router.get(route('dashboard.guru'));
-                
                 Toast.fire({
                     icon: 'success',
                     title: '🎉 Data guru berhasil ditambahkan'
@@ -212,7 +207,6 @@ const saveGuru = () => {
             onError: (errors) => {
                 console.error('Error save:', errors);
                 isLoading.value = false;
-                
                 let errorMsg = '❌ Gagal menyimpan data!';
                 if (errors && typeof errors === 'object') {
                     const messages = Object.values(errors).flat();
@@ -243,14 +237,10 @@ const deleteGuru = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             isLoading.value = true;
-            // ✅ SAMA SEPERTI KELAS: PAKAI ROUTE GURU.DESTROY
             router.delete(route('guru.destroy', id), {
                 onSuccess: () => {
                     isLoading.value = false;
-                    
-                    // ✅ Redirect ke dashboard.guru (sama seperti kelas)
                     router.get(route('dashboard.guru'));
-                    
                     Toast.fire({
                         icon: 'success',
                         title: '🗑️ Data guru berhasil dihapus'
@@ -259,7 +249,6 @@ const deleteGuru = (id) => {
                 onError: (errors) => {
                     console.error('Error delete:', errors);
                     isLoading.value = false;
-                    
                     Toast.fire({
                         icon: 'error',
                         title: '❌ Gagal menghapus data!'
@@ -377,7 +366,7 @@ watch(() => props.flash, (newFlash) => {
                         <input 
                             v-model="searchQuery"
                             type="text" 
-                            placeholder="Cari nama atau NIP..." 
+                            placeholder="Cari nama, NIP, atau mapel..." 
                             class="pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48"
                         >
                     </div>
@@ -403,6 +392,7 @@ watch(() => props.flash, (newFlash) => {
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">JK</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Pelajaran</th> <!-- ✅ Kolom baru -->
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No HP</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dibuat</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -425,6 +415,11 @@ watch(() => props.flash, (newFlash) => {
                                     {{ getJenisKelaminLabel(item.jenis_kelamin) }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                    {{ item.mata_pelajaran || '-' }}
+                                </span>
+                            </td> <!-- ✅ Tampilkan mata pelajaran dengan badge -->
                             <td class="px-6 py-4 text-sm text-gray-600">{{ item.no_hp || '-' }}</td>
                             <td class="px-6 py-4 text-sm text-gray-500">{{ formatDate(item.created_at) }}</td>
                             <td class="px-6 py-4">
@@ -453,7 +448,7 @@ watch(() => props.flash, (newFlash) => {
                             </td>
                         </tr>
                         <tr v-if="paginatedGurus.length === 0">
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500"> <!-- ✅ Ubah colspan jadi 8 -->
                                 <svg class="h-12 w-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -594,6 +589,16 @@ watch(() => props.flash, (newFlash) => {
                                 <option value="1">Laki-laki</option>
                                 <option value="2">Perempuan</option>
                             </select>
+                        </div>
+
+                        <div class="col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mata Pelajaran</label> <!-- ✅ Field baru -->
+                            <input 
+                                v-model="formData.mata_pelajaran"
+                                type="text" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Contoh: Matematika, Bahasa Indonesia, dll"
+                            >
                         </div>
 
                         <div class="col-span-2">
