@@ -7,7 +7,7 @@ use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class SiswaController extends Controller
+class KelasController extends Controller
 {
     public function index()
     {
