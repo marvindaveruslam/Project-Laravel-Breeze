@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Santri;
 use App\Models\Kelas;
 use App\Models\Guru;
+use App\Models\MataPelajaran;
 use App\Models\KelasSantri;
 use App\Models\Kelasguru;
 use App\Models\Absensi;
@@ -35,6 +36,10 @@ class DashboardController extends Controller
             ->orderBy('nama_kelas')
             ->get();
         $totalKelas = $kelas->count();
+
+        // Data Mata Pelajaran
+        $mataPelajarans = MataPelajaran::latest()->get();
+        $totalMataPelajaran = $mataPelajarans->count();
 
         // data kelas santri
         $kelasSantri = Kelas::withCount('santris')->get();
@@ -98,12 +103,14 @@ class DashboardController extends Controller
             'santris' => $santris,
             'gurus' => $gurus,
             'kelas' => $kelas,
+            'mataPelajarans' => $mataPelajarans,
             'stats' => [
                 'total_santri' => $totalSantri,
                 'laki_laki' => $lakiLaki,
                 'perempuan' => $perempuan,
                 'total_guru' => $totalGuru,
                 'total_kelas' => $totalKelas,
+                'total_mata_pelajaran' => $totalMataPelajaran,
 
                 'absensi_hari_ini' => $totalAbsensiHariIni,
                 'hadir' => $hadir,
@@ -199,6 +206,18 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard/KelasGuru/Index', [
             'kelas' => $kelas,
             'gurus' => $kelas->gurus,
+        ]);
+    }
+
+    /**
+     * Halaman Data Mata Pelajaran
+     */
+    public function mataPelajaran(Request $request): Response
+    {
+        $mataPelajarans = MataPelajaran::latest()->get();
+
+        return Inertia::render('Dashboard/MataPelajaran/Index', [
+            'mataPelajarans' => $mataPelajarans,
         ]);
     }
 

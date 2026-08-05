@@ -8,6 +8,7 @@ use App\Http\Controllers\GuruController;
 use App\Http\Controllers\KelasSantriController;
 use App\Http\Controllers\KelasGuruController;
 use App\Http\Controllers\AbsensiController;
+use App\Http\Controllers\MataPelajaranController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,7 +31,7 @@ Route::middleware('auth')->group(function () {
 
 
 Route::middleware('auth')->prefix('dashboard')->group(function () {
-    
+
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
     Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
@@ -39,6 +40,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('kelas/{kelas}/santri', [DashboardController::class, 'kelasSantri'])->name('dashboard.kelas_santri');
     Route::get('kelas/{kelas}/guru', [DashboardController::class, 'kelasGuru'])->name('dashboard.kelas_guru');
     Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
+    route::get('mata-pelajaran',[DashboardController::class,'mataPelajaran'])->name('dashboard.mata-pelajaran');
 
 });
 
@@ -50,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('kelas/{kelas}/santri', KelasSantriController::class);
     Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
     Route::resource('absensi', AbsensiController::class);
+    Route::resource('mata-pelajaran', MataPelajaranController::class);
 
 });
 
