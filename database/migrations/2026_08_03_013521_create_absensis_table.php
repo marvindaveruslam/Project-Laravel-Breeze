@@ -14,9 +14,7 @@ return new class extends Migration
         Schema::create('absensis', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('santri_id')
-                ->constrained()
-                ->cascadeOnDelete();
+          
 
             $table->foreignId('kelas_santri_id')
                 ->constrained('kelas_santri')
@@ -32,7 +30,7 @@ return new class extends Migration
 
             $table->tinyInteger('status');
 
-            $table->unique(['santri_id', 'tanggal']);
+            $table->unique(['kelas_santri_id', 'tanggal']);
 
             $table->text('keterangan')->nullable();
 
