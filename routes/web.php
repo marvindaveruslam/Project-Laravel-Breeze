@@ -41,6 +41,7 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     Route::get('kelas/{kelas}/guru', [DashboardController::class, 'kelasGuru'])->name('dashboard.kelas_guru');
     Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
     route::get('mata-pelajaran',[DashboardController::class,'mataPelajaran'])->name('dashboard.mata-pelajaran');
+    route::get('classes/{id}/detail',[DashboardController::class,'detail'])->name('dashboard.detail');
 
 });
 
