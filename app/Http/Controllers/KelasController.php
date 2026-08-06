@@ -2,94 +2,85 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KelasSantri;
-use App\Models\Santri;
-use App\Models\KelasGuru;
-use App\Models\Siswa;
 use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class KelasController extends Controller
 {
+    // Menampilkan daftar kelas
     public function index()
     {
-        $santri = Santri::with('kelas')
-            ->orderBy('nama')
-            ->get();
-
-        $totalSantri = Santri::count();
-        $totalKelas = Kelas::count();
-
-        return Inertia::render('Dashboard/Santri/Index', [
-            'santri' => $santri,
-            'stats' => [
-                'total_santri' => $totalSantri,
-                'total_kelas' => $totalKelas,
-                'rata_rata_santri' => $totalKelas > 0 ? round($totalSantri / $totalKelas, 1) : 0,
-            ]
-        ]);
-    }
-
-    public function create()
-    {
         $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
-
-        return Inertia::render('Dashboard/Santri/Create', [
+        
+        return Inertia::render('Dashboard/Kelas/Index', [
             'kelas' => $kelas
         ]);
     }
 
+    // Menampilkan form tambah kelas
+    public function create()
+    {
+        return Inertia::render('Dashboard/Kelas/Create');
+    }
+
+    // Menyimpan data kelas
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'nis' => 'required|string|max:20|unique:santris,nis',
-            'kelas_id' => 'required|exists:kelas,id',
-            'alamat' => 'nullable|string',
-            'no_hp' => 'nullable|string|max:15',
+            'nama_kelas' => 'required|string|max:255',
+            'tingkat' => 'required|string|max:50',
+            'kode_kelas' => 'nullable|string|max:50|unique:kelas,kode_kelas',
+            'deskripsi' => 'nullable|string',
         ]);
 
-        Santri::create($validated);
+        Kelas::create($validated);
 
         return redirect()
-            ->route('dashboard.santri')
-            ->with('success', 'Data santri berhasil ditambahkan.');
+            ->route('kelas.index')
+            ->with('success', 'Data kelas berhasil ditambahkan.');
     }
 
-    public function edit(Santri $santri)
+    // Menampilkan detail kelas
+    public function show(Kelas $kelas)
     {
-        $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
-
-        return Inertia::render('Dashboard/Santri/Edit', [
-            'santri' => $santri,
+        return Inertia::render('Dashboard/Kelas/Show', [
             'kelas' => $kelas
         ]);
     }
 
-    public function update(Request $request, Santri $santri)
+    // Menampilkan form edit kelas
+    public function edit(Kelas $kelas)
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'nis' => 'required|string|max:20|unique:santris,nis,' . $santri->id,
-            'kelas_id' => 'required|exists:kelas,id',
-            'alamat' => 'nullable|string',
-            'no_hp' => 'nullable|string|max:15',
+        return Inertia::render('Dashboard/Kelas/Edit', [
+            'kelas' => $kelas
         ]);
-
-        $santri->update($validated);
-
-        return redirect()
-            ->route('dashboard.santri')
-            ->with('success', 'Data santri berhasil diperbarui.');
     }
 
-    public function destroy(Santri $santri)
+    // Mengupdate data kelas
+    public function update(Request $request, Kelas $kelas)
     {
-        $santri->delete();
+        $validated = $request->validate([
+            'nama_kelas' => 'required|string|max:255',
+            'tingkat' => 'required|string|max:50',
+            'kode_kelas' => 'nullable|string|max:50|unique:kelas,kode_kelas,' . $kelas->id,
+            'deskripsi' => 'nullable|string',
+        ]);
+
+        $kelas->update($validated);
 
         return redirect()
-            ->route('dashboard.santri')
-            ->with('success', 'Data santri berhasil dihapus.');
+            ->route('kelas.index')
+            ->with('success', 'Data kelas berhasil diperbarui.');
+    }
+
+    // Menghapus data kelas
+    public function destroy(Kelas $kelas)
+    {
+        $kelas->delete();
+
+        return redirect()
+            ->route('kelas.index')
+            ->with('success', 'Data kelas berhasil dihapus.');
     }
 }
