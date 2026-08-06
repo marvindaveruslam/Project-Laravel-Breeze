@@ -250,4 +250,113 @@ class DashboardController extends Controller
     {
         return Inertia::render('Dashboard/Finance/GeneralFinance');
     }
+    /**
+     * Halaman Detail Kelas (dengan data dummy)
+     */
+    public function detail($id): Response
+    {
+        // Data dummy untuk testing
+        $kelas = (object) [
+            'id' => $id,
+            'nama_kelas' => 'AI',
+            'tingkat' => '1',
+            'santris_count' => 26,
+        ];
+
+        // Data dummy peserta
+        $peserta = [
+            (object) ['nim' => '236250001', 'nama' => 'Muh. Fauzi Taufiq', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250004', 'nama' => 'Andi Muhammad Yusuf Qadri', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250005', 'nama' => 'M. Alif Darul Firdaus', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250010', 'nama' => 'Muhammad Iqbal', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250015', 'nama' => 'Nailul Wafaaah', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250025', 'nama' => 'Muh. Fauzan Muqasith', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250026', 'nama' => 'Mohammad Ichsan', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250027', 'nama' => 'Vira Veriska I Ngadi', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250028', 'nama' => 'Abdul Razak', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250029', 'nama' => 'Nur Fadilah', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250030', 'nama' => 'Febianty', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250032', 'nama' => 'Adila Nurramadhan Mg Larase', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250039', 'nama' => 'Ghina Aghniya Khairunnisa', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250043', 'nama' => 'Mupida', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250052', 'nama' => 'Muammar Syakli Darmawan Djallo', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250055', 'nama' => 'Nursafira Kadar', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+            (object) ['nim' => '236250057', 'nama' => 'Intan Salam', 'angkatan' => '2023/2024', 'status' => 'Aktif'],
+        ];
+
+        // Data dummy jadwal
+        $jadwal = [
+            (object) [
+                'id' => 1,
+                'hari' => 'Kamis',
+                'jam_mulai' => '12:30',
+                'jam_selesai' => '15:00',
+                'frekuensi' => '1 minggu sekali',
+                'fleksibilitas' => 'Tidak',
+                'total_sks' => '3.00',
+                'ruang' => 'Lab Saintek 1'
+            ],
+            (object) [
+                'id' => 2,
+                'hari' => 'Selasa',
+                'jam_mulai' => '09:00',
+                'jam_selesai' => '11:30',
+                'frekuensi' => '1 minggu sekali',
+                'fleksibilitas' => 'Tidak',
+                'total_sks' => '3.00',
+                'ruang' => 'Lab Saintek 2'
+            ],
+        ];
+
+        // Data dummy presensi
+        $presensi = [
+            1 => [
+                (object) ['nim' => '236250001', 'nama' => 'Muh. Fauzi Taufiq', 'status' => 'Hadir'],
+                (object) ['nim' => '236250004', 'nama' => 'Andi Muhammad Yusuf Qadri', 'status' => 'Hadir'],
+                (object) ['nim' => '236250005', 'nama' => 'M. Alif Darul Firdaus', 'status' => 'Hadir'],
+                (object) ['nim' => '236250010', 'nama' => 'Muhammad Iqbal', 'status' => 'Hadir'],
+                (object) ['nim' => '236250015', 'nama' => 'Nailul Wafaaah', 'status' => 'Hadir'],
+                (object) ['nim' => '236250025', 'nama' => 'Muh. Fauzan Muqasith', 'status' => 'Hadir'],
+                (object) ['nim' => '236250026', 'nama' => 'Mohammad Ichsan', 'status' => 'Hadir'],
+                (object) ['nim' => '236250027', 'nama' => 'Vira Veriska I Ngadi', 'status' => 'Izin'],
+                (object) ['nim' => '236250028', 'nama' => 'Abdul Razak', 'status' => 'Hadir'],
+                (object) ['nim' => '236250029', 'nama' => 'Nur Fadilah', 'status' => 'Hadir'],
+                (object) ['nim' => '236250030', 'nama' => 'Febianty', 'status' => 'Hadir'],
+                (object) ['nim' => '236250032', 'nama' => 'Adila Nurramadhan Mg Larase', 'status' => 'Sakit'],
+                (object) ['nim' => '236250039', 'nama' => 'Ghina Aghniya Khairunnisa', 'status' => 'Hadir'],
+                (object) ['nim' => '236250043', 'nama' => 'Mupida', 'status' => 'Hadir'],
+                (object) ['nim' => '236250052', 'nama' => 'Muammar Syakli Darmawan Djallo', 'status' => 'Hadir'],
+                (object) ['nim' => '236250055', 'nama' => 'Nursafira Kadar', 'status' => 'Hadir'],
+                (object) ['nim' => '236250057', 'nama' => 'Intan Salam', 'status' => 'Hadir'],
+            ],
+            2 => [
+                (object) ['nim' => '236250001', 'nama' => 'Muh. Fauzi Taufiq', 'status' => 'Hadir'],
+                (object) ['nim' => '236250004', 'nama' => 'Andi Muhammad Yusuf Qadri', 'status' => 'Izin'],
+                (object) ['nim' => '236250005', 'nama' => 'M. Alif Darul Firdaus', 'status' => 'Hadir'],
+                (object) ['nim' => '236250010', 'nama' => 'Muhammad Iqbal', 'status' => 'Hadir'],
+                (object) ['nim' => '236250015', 'nama' => 'Nailul Wafaaah', 'status' => 'Hadir'],
+                (object) ['nim' => '236250025', 'nama' => 'Muh. Fauzan Muqasith', 'status' => 'Hadir'],
+                (object) ['nim' => '236250026', 'nama' => 'Mohammad Ichsan', 'status' => 'Sakit'],
+                (object) ['nim' => '236250027', 'nama' => 'Vira Veriska I Ngadi', 'status' => 'Alpa'],
+                (object) ['nim' => '236250028', 'nama' => 'Abdul Razak', 'status' => 'Hadir'],
+                (object) ['nim' => '236250029', 'nama' => 'Nur Fadilah', 'status' => 'Hadir'],
+                (object) ['nim' => '236250030', 'nama' => 'Febianty', 'status' => 'Hadir'],
+                (object) ['nim' => '236250032', 'nama' => 'Adila Nurramadhan Mg Larase', 'status' => 'Izin'],
+                (object) ['nim' => '236250039', 'nama' => 'Ghina Aghniya Khairunnisa', 'status' => 'Hadir'],
+                (object) ['nim' => '236250043', 'nama' => 'Mupida', 'status' => 'Hadir'],
+                (object) ['nim' => '236250052', 'nama' => 'Muammar Syakli Darmawan Djallo', 'status' => 'Hadir'],
+                (object) ['nim' => '236250055', 'nama' => 'Nursafira Kadar', 'status' => 'Hadir'],
+                (object) ['nim' => '236250057', 'nama' => 'Intan Salam', 'status' => 'Hadir'],
+            ]
+        ];
+
+        return Inertia::render('Dashboard/Classes/DetailClass', [
+            'kelas' => $kelas,
+            'peserta' => $peserta,
+            'jadwal' => $jadwal,
+            'presensi' => $presensi,
+        ]);
+    }
 }
+
+
