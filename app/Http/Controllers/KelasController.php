@@ -8,7 +8,9 @@ use Inertia\Inertia;
 
 class KelasController extends Controller
 {
-    // Menampilkan daftar kelas
+    /**
+     * Menampilkan daftar kelas
+     */
     public function index()
     {
         $kelas = Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get();
@@ -18,13 +20,17 @@ class KelasController extends Controller
         ]);
     }
 
-    // Menampilkan form tambah kelas
+    /**
+     * Menampilkan form tambah kelas
+     */
     public function create()
     {
         return Inertia::render('Dashboard/Kelas/Create');
     }
 
-    // Menyimpan data kelas
+    /**
+     * Menyimpan data kelas
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -41,7 +47,9 @@ class KelasController extends Controller
             ->with('success', 'Data kelas berhasil ditambahkan.');
     }
 
-    // Menampilkan detail kelas
+    /**
+     * Menampilkan detail kelas
+     */
     public function show(Kelas $kelas)
     {
         return Inertia::render('Dashboard/Kelas/Show', [
@@ -49,7 +57,9 @@ class KelasController extends Controller
         ]);
     }
 
-    // Menampilkan form edit kelas
+    /**
+     * Menampilkan form edit kelas
+     */
     public function edit(Kelas $kelas)
     {
         return Inertia::render('Dashboard/Kelas/Edit', [
@@ -57,7 +67,9 @@ class KelasController extends Controller
         ]);
     }
 
-    // Mengupdate data kelas
+    /**
+     * Mengupdate data kelas
+     */
     public function update(Request $request, Kelas $kelas)
     {
         $validated = $request->validate([
@@ -74,7 +86,9 @@ class KelasController extends Controller
             ->with('success', 'Data kelas berhasil diperbarui.');
     }
 
-    // Menghapus data kelas
+    /**
+     * Menghapus data kelas
+     */
     public function destroy(Kelas $kelas)
     {
         $kelas->delete();
