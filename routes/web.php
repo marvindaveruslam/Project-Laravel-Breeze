@@ -22,35 +22,29 @@ Route::get('/', function () {
     ]);
 });
 
-// ============================================
-// ROUTE UNTUK PROFILE (Auth)
-// ============================================
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// ============================================
-// ROUTE DASHBOARD (HANYA UNTUK MENAMPILKAN HALAMAN)
-// ============================================
+
 Route::middleware('auth')->prefix('dashboard')->group(function () {
+
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
     Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
-    
-    // HAPUS route GET yang duplikat dengan resource di bawah
-    // Route::get('santri', ...)           → pakai resource /santri
-    // Route::get('guru', ...)             → pakai resource /guru
-    // Route::get('absensi', ...)          → pakai resource /absensi
-    // Route::get('mata-pelajaran', ...)   → pakai resource /mata-pelajaran
-    // Route::get('kelas/{kelas}/santri')  → pakai resource /kelas/{kelas}/santri
-    // Route::get('kelas/{kelas}/guru')    → pakai resource /kelas/{kelas}/guru
+    Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
+    Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
+    Route::get('kelas/{kelas}/santri', [DashboardController::class, 'kelasSantri'])->name('dashboard.kelas_santri');
+    Route::get('kelas/{kelas}/guru', [DashboardController::class, 'kelasGuru'])->name('dashboard.kelas_guru');
+    Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
+    route::get('mata-pelajaran',[DashboardController::class,'mataPelajaran'])->name('dashboard.mata-pelajaran');
+
 });
 
-// ============================================
-// ROUTE CRUD RESOURCE (UNTUK KELOLA DATA)
-// ============================================
+
 Route::middleware(['auth'])->group(function () {
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
     Route::resource('santri', SantriController::class);
@@ -59,6 +53,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
     Route::resource('absensi', AbsensiController::class);
     Route::resource('mata-pelajaran', MataPelajaranController::class);
+
 });
 
 require __DIR__.'/auth.php';
