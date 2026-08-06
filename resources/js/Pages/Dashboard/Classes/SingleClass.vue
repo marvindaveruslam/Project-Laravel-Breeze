@@ -251,6 +251,10 @@ const editClass = (id) => {
     }
 };
 
+// ============================================
+// FUNGSI CRUD KELAS (DIUBAH JADI GET)
+// ============================================
+
 const saveClass = () => {
     if (!formData.value.nama_kelas || !formData.value.tingkat) {
         Toast.fire({
@@ -263,7 +267,8 @@ const saveClass = () => {
     isLoading.value = true;
 
     if (isEdit.value) {
-        router.put(`/kelas/${currentId.value}`, formData.value, {
+        // ✅ EDIT → GET /kelas/{id}/update
+        router.get(`/kelas/${currentId.value}/update`, formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
@@ -282,7 +287,8 @@ const saveClass = () => {
             }
         });
     } else {
-        router.post('/kelas', formData.value, {
+        // ✅ TAMBAH → GET /kelas/store
+        router.get('/kelas/store', formData.value, {
             onSuccess: () => {
                 showModal.value = false;
                 resetForm();
@@ -317,7 +323,8 @@ const deleteClass = (id) => {
     }).then((result) => {
         if (result.isConfirmed) {
             isLoading.value = true;
-            router.delete(`/kelas/${id}`, {
+            // ✅ HAPUS → GET /kelas/{id}/delete
+            router.get(`/kelas/${id}/delete`, {
                 onSuccess: () => {
                     isLoading.value = false;
                     Toast.fire({
