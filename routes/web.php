@@ -47,13 +47,13 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
 
 
 Route::middleware(['auth'])->group(function () {
-    Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
-    Route::resource('santri', SantriController::class);
-    Route::resource('guru', GuruController::class);
-    Route::resource('kelas/{kelas}/santri', KelasSantriController::class);
-    Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
-    Route::resource('absensi', AbsensiController::class);
-    Route::resource('mata-pelajaran', MataPelajaranController::class);
+    // Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
+    // Route::resource('santri', SantriController::class);
+    // Route::resource('guru', GuruController::class);
+    // Route::resource('kelas/{kelas}/santri', KelasSantriController::class);
+    // Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
+    // Route::resource('absensi', AbsensiController::class);
+    // Route::resource('mata-pelajaran', MataPelajaranController::class);
 
 });
 
