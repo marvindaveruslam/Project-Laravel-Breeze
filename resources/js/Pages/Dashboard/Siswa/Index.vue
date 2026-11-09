@@ -47,7 +47,6 @@ const submitCatatan = () => {
         preserveScroll: true,
         onSuccess: () => {
             closeModal();
-            // Anda bisa mengganti alert dengan toast notification jika ada
             alert('Catatan berhasil disimpan!');
         },
     });
@@ -209,17 +208,17 @@ const submitCatatan = () => {
         </div>
 
         <!-- ========================================== -->
-        <!-- MODAL TAMBAH CATATAN (PEMICU MODAL)        -->
+        <!-- MODAL TAMBAH CATATAN (MUNCUL SAAT DIKLIK)  -->
         <!-- ========================================== -->
         <div v-if="isModalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             
-            <!-- Overlay Gelap (Hitam Transparan) -->
-            <div class="fixed inset-0 bg-gray-900 bg-opacity-60 transition-opacity" @click="closeModal"></div>
+            <!-- Overlay Gelap (Hitam Transparan) - MENGGUNAKAN BG-BLACK -->
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="closeModal"></div>
 
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
                 
-                <!-- Kotak Modal (z-10 agar di atas overlay) -->
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg z-10">
+                <!-- Kotak Modal -->
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg z-10">
                     
                     <!-- Header Modal -->
                     <div class="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center">
