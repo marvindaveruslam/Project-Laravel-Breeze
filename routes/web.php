@@ -9,6 +9,8 @@ use App\Http\Controllers\KelasSantriController;
 use App\Http\Controllers\KelasGuruController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\MataPelajaranController;
+use App\Http\Controllers\SiswaController; // <-- Tambahan
+use App\Http\Controllers\CatatanSiswaController; // <-- Tambahan
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,6 +45,16 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     route::get('mata-pelajaran',[DashboardController::class,'mataPelajaran'])->name('dashboard.mata-pelajaran');
     route::get('classes/{id}/detail',[DashboardController::class,'detail'])->name('dashboard.detail');
 
+   
+    Route::get('siswa', [SiswaController::class, 'index'])->name('dashboard.siswa');
+    
+    
+    Route::get('siswa/catatan', [CatatanSiswaController::class, 'index'])->name('dashboard.siswa.catatan');
+    
+    
+    Route::post('siswa', [SiswaController::class, 'store'])->name('dashboard.siswa.store');
+    Route::post('siswa/catatan', [CatatanSiswaController::class, 'store'])->name('dashboard.siswa.catatan.store');
+
 });
 
 
@@ -54,7 +66,6 @@ Route::middleware(['auth'])->group(function () {
     // Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
     // Route::resource('absensi', AbsensiController::class);
     // Route::resource('mata-pelajaran', MataPelajaranController::class);
-
 });
 
 require __DIR__.'/auth.php';
