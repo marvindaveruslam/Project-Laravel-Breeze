@@ -34,52 +34,48 @@ Route::middleware('auth')->group(function () {
 // ==========================================
 Route::middleware('auth')->prefix('dashboard')->group(function () {
 
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
-    Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
-    Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
-    Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
-    Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
-    Route::get('mata-pelajaran', [DashboardController::class, 'mataPelajaran'])->name('dashboard.mata-pelajaran');
+    // --- Hanya admin & operator ---
+    Route::middleware('role:admin,operator')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
+        Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
+        Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
+        Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
+        Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
+        Route::get('mata-pelajaran', [DashboardController::class, 'mataPelajaran'])->name('dashboard.mata-pelajaran');
 
-    // --- MODUL KELAS DI DASHBOARD ---
-    Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
-    Route::get('classes/{kelas}/detail', [KelasController::class, 'show'])->name('dashboard.detail');
-    
-    // Rute untuk menyimpan guru/jadwal ke kelas
-    Route::post('classes/{kelas}/guru', [KelasController::class, 'storeGuru'])->name('classes.storeGuru');
-    
-    // Rute untuk menghapus jadwal guru dari kelas
-    Route::delete('classes/{kelas}/guru/{guruId}', [KelasController::class, 'destroyGuru'])->name('classes.destroyGuru');
+        // --- MODUL KELAS DI DASHBOARD ---
+        Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
+        Route::get('classes/{kelas}/detail', [KelasController::class, 'show'])->name('dashboard.detail');
+        Route::post('classes/{kelas}/guru', [KelasController::class, 'storeGuru'])->name('classes.storeGuru');
+        Route::delete('classes/{kelas}/guru/{guruId}', [KelasController::class, 'destroyGuru'])->name('classes.destroyGuru');
+        Route::put('classes/{kelas}/walikelas', [KelasController::class, 'updateWalikelas'])->name('classes.updateWalikelas');
+        Route::put('classes/{kelas}/guru/{guruId}', [KelasController::class, 'updateGuru'])->name('classes.updateGuru');
+    });
 
-    // Rute untuk mengupdate Walikelas
-    Route::put('classes/{kelas}/walikelas', [KelasController::class, 'updateWalikelas'])->name('classes.updateWalikelas');
-
-    // Rute untuk mengupdate Jadwal Guru (Edit di samping Hapus)
-    // NAMA RUTE DISESUAIKAN DENGAN VUE: classes.updateGuru
-    Route::put('classes/{kelas}/guru/{guruId}', [KelasController::class, 'updateGuru'])->name('classes.updateGuru');
-
-    // --- MODUL SISWA ---
-    Route::get('siswa', [SiswaController::class, 'index'])->name('dashboard.siswa');
-    Route::post('siswa', [SiswaController::class, 'store'])->name('dashboard.siswa.store');
-    Route::get('siswa/{id}', [SiswaController::class, 'show'])->whereNumber('id')->name('dashboard.siswa.show');
-    Route::put('siswa/{id}', [SiswaController::class, 'update'])->whereNumber('id')->name('dashboard.siswa.update');
-    Route::put('siswa/{id}/nilai', [SiswaController::class, 'updateGrades'])->whereNumber('id')->name('dashboard.siswa.grades.update');
-    Route::delete('siswa/{id}/nilai/{gradeId}', [SiswaController::class, 'destroyGrade'])->whereNumber(['id', 'gradeId'])->name('dashboard.siswa.grades.destroy');
-    Route::post('siswa/{id}/kehadiran', [SiswaController::class, 'storeAttendance'])->whereNumber('id')->name('dashboard.siswa.attendance.store');
-    Route::delete('siswa/{id}/kehadiran/{attendanceId}', [SiswaController::class, 'destroyAttendance'])->whereNumber(['id', 'attendanceId'])->name('dashboard.siswa.attendance.destroy');
-
+    // --- MODUL SISWA: semua peran, tapi dibatasi per siswa di SiswaController (Policy) ---
+    Route::middleware('role:admin,operator,walikelas,guru')->group(function () {
+        Route::get('siswa', [SiswaController::class, 'index'])->name('dashboard.siswa');
+        Route::post('siswa', [SiswaController::class, 'store'])->name('dashboard.siswa.store');
+        Route::get('siswa/{id}', [SiswaController::class, 'show'])->whereNumber('id')->name('dashboard.siswa.show');
+        Route::put('siswa/{id}', [SiswaController::class, 'update'])->whereNumber('id')->name('dashboard.siswa.update');
+        Route::get('siswa/{id}/nilai', [SiswaController::class, 'nilai'])->whereNumber('id')->name('dashboard.siswa.nilai');
+        Route::put('siswa/{id}/nilai', [SiswaController::class, 'updateGrades'])->whereNumber('id')->name('dashboard.siswa.grades.update');
+        Route::delete('siswa/{id}/nilai/{gradeId}', [SiswaController::class, 'destroyGrade'])->whereNumber(['id', 'gradeId'])->name('dashboard.siswa.grades.destroy');
+        Route::post('siswa/{id}/kehadiran', [SiswaController::class, 'storeAttendance'])->whereNumber('id')->name('dashboard.siswa.attendance.store');
+        Route::delete('siswa/{id}/kehadiran/{attendanceId}', [SiswaController::class, 'destroyAttendance'])->whereNumber(['id', 'attendanceId'])->name('dashboard.siswa.attendance.destroy');
+    });
 });
 
 // ==========================================
-// RUTE CRUD RESOURCE (Tanpa Prefix Dashboard)
+// RUTE CRUD RESOURCE (Tanpa Prefix Dashboard) — hanya admin & operator
 // ==========================================
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'role:admin,operator'])->group(function () {
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
     Route::resource('santri', SantriController::class);
     Route::resource('guru', GuruController::class);
     Route::resource('absensi', AbsensiController::class);
     Route::resource('mata-pelajaran', MataPelajaranController::class);
-    
+
     // Rute Nested Resource
     Route::resource('kelas/{kelas}/santri', KelasSantriController::class);
     Route::resource('kelas/{kelas}/guru', KelasGuruController::class);

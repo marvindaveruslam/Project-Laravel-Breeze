@@ -22,6 +22,17 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    // Login terpisah untuk Walikelas dan Guru Mapel
+    Route::get('login/walikelas', [AuthenticatedSessionController::class, 'create'])
+        ->defaults('portal', 'walikelas')->name('login.walikelas');
+    Route::post('login/walikelas', [AuthenticatedSessionController::class, 'store'])
+        ->defaults('portal', 'walikelas');
+
+    Route::get('login/guru', [AuthenticatedSessionController::class, 'create'])
+        ->defaults('portal', 'guru')->name('login.guru');
+    Route::post('login/guru', [AuthenticatedSessionController::class, 'store'])
+        ->defaults('portal', 'guru');
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 

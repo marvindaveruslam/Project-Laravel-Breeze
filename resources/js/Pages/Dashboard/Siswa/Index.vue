@@ -21,6 +21,11 @@ const props = defineProps({
         default: () => ({ total: 0, laki_laki: 0, perempuan: 0 }),
     },
     filters: { type: Object, default: () => ({ search: "" }) },
+    kelasOptions: { type: Array, default: () => [] },
+    access: {
+        type: Object,
+        default: () => ({ can_create: false, mode: "guru" }),
+    },
     flash: Object,
 });
 
@@ -82,12 +87,17 @@ const goToPage = (page) => {
 
 // ---------------- Tambah siswa ----------------
 const showModal = ref(false);
+
+// Walikelas/admin membuka detail lengkap; guru mapel langsung ke halaman input nilai
+const rowHref = (s) =>
+    s.can_detail
+        ? route("dashboard.siswa.show", s.id)
+        : route("dashboard.siswa.nilai", s.id);
 const form = useForm({
     nis: "",
     name: "",
     gender: "L",
-    class: "",
-    homeroom_teacher: "",
+    kelas_id: "",
 });
 
 const submit = () => {
@@ -124,7 +134,7 @@ watch(
 
     <DashboardLayout title="Data Siswa">
         <!-- Statistik -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div v-if="stats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 <p class="text-sm font-medium text-gray-500">Total Siswa</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">{{ stats.total }}</p>
@@ -156,6 +166,7 @@ watch(
                         placeholder="Cari nama, NIS, atau kelas..."
                     />
                     <button
+                        v-if="access.can_create"
                         @click="showModal = true"
                         class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2 whitespace-nowrap transition"
                     >
@@ -171,10 +182,10 @@ watch(
                             <th class="px-6 py-3">#</th>
                             <th class="px-6 py-3">Nama</th>
                             <th class="px-6 py-3">NIS</th>
-                            <th class="px-6 py-3">JK</th>
+                            <th v-if="access.mode !== 'guru'" class="px-6 py-3">JK</th>
                             <th class="px-6 py-3">Kelas</th>
-                            <th class="px-6 py-3">Walikelas</th>
-                            <th class="px-6 py-3">Status</th>
+                            <th v-if="access.mode !== 'guru'" class="px-6 py-3">Walikelas</th>
+                            <th v-if="access.mode !== 'guru'" class="px-6 py-3">Status</th>
                             <th class="px-6 py-3">Aksi</th>
                         </tr>
                     </thead>
@@ -195,7 +206,7 @@ watch(
                             </td>
                             <td class="px-6 py-3">
                                 <Link
-                                    :href="route('dashboard.siswa.show', s.id)"
+                                    :href="rowHref(s)"
                                     class="flex items-center gap-3 group"
                                 >
                                     <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
@@ -207,16 +218,16 @@ watch(
                                 </Link>
                             </td>
                             <td class="px-6 py-3">{{ s.nis }}</td>
-                            <td class="px-6 py-3">
-                                {{ s.gender === "L" ? "Laki-laki" : "Perempuan" }}
+                            <td v-if="access.mode !== 'guru'" class="px-6 py-3">
+                                {{ s.gender ? (s.gender === "L" ? "Laki-laki" : "Perempuan") : "-" }}
                             </td>
                             <td class="px-6 py-3">
                                 <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
                                     {{ s.class || "-" }}
                                 </span>
                             </td>
-                            <td class="px-6 py-3">{{ s.homeroom_teacher || "-" }}</td>
-                            <td class="px-6 py-3">
+                            <td v-if="access.mode !== 'guru'" class="px-6 py-3">{{ s.homeroom_teacher || "-" }}</td>
+                            <td v-if="access.mode !== 'guru'" class="px-6 py-3">
                                 <span
                                     class="px-2 py-1 rounded text-xs font-medium"
                                     :class="{
@@ -225,15 +236,15 @@ watch(
                                         'bg-red-100 text-red-700': s.status === 'Keluar',
                                     }"
                                 >
-                                    {{ s.status || 'Aktif' }}
+                                    {{ s.status || '-' }}
                                 </span>
                             </td>
                             <td class="px-6 py-3">
                                 <Link
-                                    :href="route('dashboard.siswa.show', s.id)"
+                                    :href="rowHref(s)"
                                     class="text-blue-600 hover:text-blue-900 font-medium"
                                 >
-                                    Buka
+                                    {{ s.can_detail ? "Buka" : "Input Nilai" }}
                                 </Link>
                             </td>
                         </tr>
@@ -347,21 +358,21 @@ watch(
                         </div>
                         <div>
                             <label class="text-sm text-gray-600">Kelas</label>
-                            <input
-                                v-model="form.class"
-                                type="text"
+                            <select
+                                v-model="form.kelas_id"
                                 class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-                            />
+                            >
+                                <option value="">- Pilih kelas -</option>
+                                <option v-for="k in kelasOptions" :key="k.id" :value="k.id">
+                                    {{ k.nama_kelas }}
+                                </option>
+                            </select>
+                            <p v-if="form.errors.kelas_id" class="text-xs text-red-600 mt-1">
+                                {{ form.errors.kelas_id }}
+                            </p>
                         </div>
                     </div>
-                    <div>
-                        <label class="text-sm text-gray-600">Nama Walikelas</label>
-                        <input
-                            v-model="form.homeroom_teacher"
-                            type="text"
-                            class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
+                    <p class="text-xs text-gray-500">Nama walikelas terisi otomatis sesuai kelas yang dipilih.</p>
                 </div>
                 <div class="flex justify-end gap-2 mt-5">
                     <button

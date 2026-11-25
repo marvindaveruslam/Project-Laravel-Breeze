@@ -18,6 +18,7 @@ class Student extends Model
         'name', 
         'gender', 
         'class', 
+        'kelas_id',
         'birth_place', 
         'birth_date', 
         'parent_name', 
@@ -35,6 +36,11 @@ class Student extends Model
     {
         // Menghubungkan ke model Grade
         return $this->hasMany(Grade::class);
+    }
+
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class);
     }
 
     /**

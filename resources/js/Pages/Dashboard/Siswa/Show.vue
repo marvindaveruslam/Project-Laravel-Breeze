@@ -11,6 +11,9 @@ const props = defineProps({
         default: () => ({ hadir: 0, izin: 0, sakit: 0, alpa: 0 }),
     },
     recentAttendances: { type: Array, default: () => [] },
+    kelasOptions: { type: Array, default: () => [] },
+    // Hanya admin/operator yang boleh mengubah NIS, kelas, dan status
+    access: { type: Object, default: () => ({ can_edit_admin_fields: false }) },
     flash: Object,
 });
 
@@ -47,14 +50,13 @@ const fillBio = () => ({
     nis: props.siswa.nis ?? "",
     name: props.siswa.name ?? "",
     gender: props.siswa.gender ?? "L",
-    class: props.siswa.class ?? "",
+    kelas_id: props.siswa.kelas_id ?? "",
     birth_place: props.siswa.birth_place ?? "",
     birth_date: props.siswa.birth_date ?? "",
     parent_name: props.siswa.parent_name ?? "",
     parent_phone: props.siswa.parent_phone ?? "",
     dormitory: props.siswa.dormitory ?? "",
     address: props.siswa.address ?? "",
-    homeroom_teacher: props.siswa.homeroom_teacher ?? "",
     status: props.siswa.status ?? "Aktif",
 });
 const bio = useForm(fillBio());
@@ -319,7 +321,7 @@ const attCards = [
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div>
                         <label class="text-xs text-gray-600 mb-1 block">NIS</label>
-                        <input v-model="bio.nis" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                        <input v-model="bio.nis" :disabled="!access.can_edit_admin_fields" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
                         <p v-if="bio.errors.nis" class="text-xs text-red-600 mt-1">{{ bio.errors.nis }}</p>
                     </div>
                     <div>
@@ -345,7 +347,11 @@ const attCards = [
                     </div>
                     <div>
                         <label class="text-xs text-gray-600 mb-1 block">Kelas</label>
-                        <input v-model="bio.class" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                        <select v-if="access.can_edit_admin_fields" v-model="bio.kelas_id" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">- Pilih kelas -</option>
+                            <option v-for="k in kelasOptions" :key="k.id" :value="k.id">{{ k.nama_kelas }}</option>
+                        </select>
+                        <input v-else :value="siswa.class || '-'" disabled class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
                     </div>
                     <div>
                         <label class="text-xs text-gray-600 mb-1 block">Kamar Asrama</label>
@@ -361,11 +367,11 @@ const attCards = [
                     </div>
                     <div>
                         <label class="text-xs text-gray-600 mb-1 block">Nama Walikelas</label>
-                        <input v-model="bio.homeroom_teacher" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500" />
+                        <input :value="siswa.homeroom_teacher || '-'" disabled title="Diatur dari menu Data Kelas" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500" />
                     </div>
                     <div>
                         <label class="text-xs text-gray-600 mb-1 block">Status</label>
-                        <select v-model="bio.status" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500">
+                        <select v-model="bio.status" :disabled="!access.can_edit_admin_fields" class="w-full border border-gray-300 rounded p-1.5 text-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-500">
                             <option>Aktif</option>
                             <option>Lulus</option>
                             <option>Keluar</option>

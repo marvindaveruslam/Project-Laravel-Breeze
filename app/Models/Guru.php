@@ -19,6 +19,7 @@ class Guru extends Model
         'no_hp',
         'alamat',
         'mata_pelajaran',
+        'user_id',
     ];
 
     /**
@@ -55,5 +56,13 @@ class Guru extends Model
     public function waliKelas()
     {
         return $this->hasOne(Kelas::class, 'walikelas_id');
+    }
+
+    /**
+     * Akun login milik guru ini
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

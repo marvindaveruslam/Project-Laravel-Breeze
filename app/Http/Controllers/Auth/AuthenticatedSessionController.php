@@ -13,41 +13,43 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
+    /** Role yang diizinkan untuk tiap pintu login */
+    private const PORTAL_ROLES = [
+        'admin'     => ['admin', 'operator'],
+        'walikelas' => ['walikelas'],
+        'guru'      => ['guru'],
+    ];
+
     /**
-     * Display the login view.
+     * Display the login view (portal: admin | walikelas | guru).
      */
-    public function create(): Response
+    public function create(string $portal = 'admin'): Response
     {
+        abort_unless(isset(self::PORTAL_ROLES[$portal]), 404);
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'portal' => $portal,
         ]);
     }
 
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, string $portal = 'admin'): RedirectResponse
     {
-         $request->authenticate();
+        abort_unless(isset(self::PORTAL_ROLES[$portal]), 404);
+
+        $request->authenticate(self::PORTAL_ROLES[$portal]);
 
         $request->session()->regenerate();
 
-        $user = auth()->user();
-
-        switch ($user->role) {
-            case 'admin':
-                return redirect('/dashboard');
-
-            case 'guru':
-                return redirect('/dashboard');
-
-            case 'operator':
-                return redirect('/dashboard');
-
-            default:
-                return redirect('/');
-        }
+        return match (auth()->user()->role) {
+            'admin', 'operator' => redirect()->route('dashboard.index'),
+            'walikelas', 'guru' => redirect()->route('dashboard.siswa'),
+            default => redirect('/'),
+        };
     }
 
     /**

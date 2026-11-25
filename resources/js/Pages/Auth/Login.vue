@@ -8,14 +8,46 @@ import Checkbox from "@/Components/Checkbox.vue";
 import { ref } from "vue";
 import { Head, Link, useForm } from "@inertiajs/vue3";
 
-defineProps({
+const props = defineProps({
     canResetPassword: {
         type: Boolean,
     },
     status: {
         type: String,
     },
+    // admin | walikelas | guru
+    portal: {
+        type: String,
+        default: "admin",
+    },
 });
+
+// Tampilan & tujuan submit berbeda untuk tiap pintu login
+const portals = {
+    admin: {
+        route: "login",
+        title: "Login Admin / Operator",
+        subtitle: "Khusus pengelola sistem",
+        badge: "bg-gray-800 text-white",
+        btn: "bg-gray-800 hover:bg-gray-900",
+    },
+    walikelas: {
+        route: "login.walikelas",
+        title: "Login Walikelas",
+        subtitle: "Akses detail siswa di kelas yang Anda walikan",
+        badge: "bg-emerald-600 text-white",
+        btn: "bg-emerald-600 hover:bg-emerald-700",
+    },
+    guru: {
+        route: "login.guru",
+        title: "Login Guru Mapel",
+        subtitle: "Input nilai mata pelajaran yang Anda ajar",
+        badge: "bg-blue-600 text-white",
+        btn: "bg-blue-600 hover:bg-blue-700",
+    },
+};
+const cfg = portals[props.portal] ?? portals.admin;
+const otherPortals = Object.entries(portals).filter(([key]) => key !== props.portal);
 
 const form = useForm({
     email: "",
@@ -27,7 +59,7 @@ const form = useForm({
 const showPassword = ref(false);
 
 const submit = () => {
-    form.post(route("login"), {
+    form.post(route(cfg.route), {
         onFinish: () => form.reset("password"),
     });
 };
@@ -35,7 +67,15 @@ const submit = () => {
 
 <template>
     <GuestLayout>
-        <Head title="Login" />
+        <Head :title="cfg.title" />
+
+        <!-- Penanda pintu login -->
+        <div class="mb-5 text-center">
+            <span class="inline-block rounded-full px-4 py-1 text-xs font-bold tracking-wider uppercase" :class="cfg.badge">
+                {{ cfg.title }}
+            </span>
+            <p class="mt-2 text-sm text-gray-600">{{ cfg.subtitle }}</p>
+        </div>
 
         <!-- Status Message -->
         <div
@@ -200,8 +240,8 @@ const submit = () => {
 
             <!-- Submit Button -->
             <PrimaryButton
-                class="w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl border-0"
-                :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+                class="w-full justify-center text-white font-bold py-3.5 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl border-0"
+                :class="[cfg.btn, { 'opacity-50 cursor-not-allowed': form.processing }]"
                 :disabled="form.processing"
             >
                 <span
@@ -250,6 +290,21 @@ const submit = () => {
                 </span>
             </PrimaryButton>
         </form>
+
+        <!-- Pindah ke pintu login lain -->
+        <div class="mt-5 border-t border-gray-200 pt-4 text-center text-xs text-gray-600">
+            <p class="mb-1">Bukan peran ini?</p>
+            <div class="flex flex-wrap justify-center gap-x-4 gap-y-1">
+                <Link
+                    v-for="[key, other] in otherPortals"
+                    :key="key"
+                    :href="route(other.route)"
+                    class="font-medium text-gray-800 hover:underline"
+                >
+                    {{ other.title }}
+                </Link>
+            </div>
+        </div>
     </GuestLayout>
 </template>
 

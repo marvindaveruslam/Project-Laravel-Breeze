@@ -77,8 +77,12 @@ const getLogoName = () => {
 };
 
 // Ambil role/title user
+// Admin & operator melihat semua menu; walikelas/guru hanya modul siswa
+const isAdminLike = computed(() => ['admin', 'operator'].includes(user.value.role));
+
 const getRole = () => {
-    return user.value.role || 'PIMPINAN';
+    const labels = { walikelas: 'Walikelas', guru: 'Guru Mapel', admin: 'Admin', operator: 'Operator' };
+    return labels[user.value.role] || user.value.role || 'PIMPINAN';
 };
 
 // FUNGSI LOGOUT
@@ -116,7 +120,7 @@ const currentYear = new Date().getFullYear();
 
             <!-- Menu -->
             <div class="flex-1 overflow-y-auto p-4">
-                <div class="mb-6">
+                <div v-if="isAdminLike" class="mb-6">
                     <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">UTAMA</div>
                     <div class="space-y-1">
                         <Link :href="route('dashboard.index')" 
@@ -141,7 +145,7 @@ const currentYear = new Date().getFullYear();
                 <div class="mb-6">
                     <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">AKADEMIK & SANTRI</div>
                     <div class="space-y-1">
-                        <Link :href="route('dashboard.santri')" 
+                        <Link v-if="isAdminLike" :href="route('dashboard.santri')" 
                               class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors"
                               :class="isActive('/dashboard/santri') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'">
                             <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,7 +153,7 @@ const currentYear = new Date().getFullYear();
                             </svg>
                             Data Santri
                         </Link>
-                        <Link :href="route('dashboard.guru')" 
+                        <Link v-if="isAdminLike" :href="route('dashboard.guru')" 
                               class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors"
                               :class="isActive('/dashboard/guru') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'">
                             <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +175,7 @@ const currentYear = new Date().getFullYear();
                         </Link>
                         <!-- ========================================== -->
 
-                        <Link :href="route('dashboard.classes')" 
+                        <Link v-if="isAdminLike" :href="route('dashboard.classes')" 
                               class="flex items-center px-3 py-2 text-sm rounded-lg transition-colors"
                               :class="isActive('/dashboard/classes') ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'">
                             <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

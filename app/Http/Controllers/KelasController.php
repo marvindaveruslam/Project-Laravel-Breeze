@@ -136,11 +136,40 @@ class KelasController extends Controller
             'walikelas_id' => 'nullable|exists:gurus,id', // Boleh kosong atau ID guru
         ]);
 
+        $oldGuruId = $kelas->walikelas_id;
+
         $kelas->update([
             'walikelas_id' => $validated['walikelas_id']
         ]);
 
+        // Samakan nama walikelas yang tampil di data siswa
+        \App\Models\Student::where('kelas_id', $kelas->id)->update([
+            'homeroom_teacher' => $kelas->fresh()->walikelas?->nama,
+        ]);
+
+        // Sinkronkan role akun: walikelas baru -> 'walikelas', yang lama -> 'guru'
+        // (akun admin/operator tidak pernah diubah)
+        $this->syncWalikelasRole($validated['walikelas_id'] ?? null);
+        if ($oldGuruId && (int) $oldGuruId !== (int) ($validated['walikelas_id'] ?? 0)) {
+            $this->syncWalikelasRole($oldGuruId);
+        }
+
         return back()->with('success', 'Walikelas berhasil diperbarui.');
+    }
+
+    private function syncWalikelasRole($guruId): void
+    {
+        if (! $guruId) {
+            return;
+        }
+
+        $guru = \App\Models\Guru::with('user')->find($guruId);
+        if (! $guru || ! $guru->user || ! in_array($guru->user->role, ['guru', 'walikelas'], true)) {
+            return;
+        }
+
+        $masihWalikelas = Kelas::where('walikelas_id', $guru->id)->exists();
+        $guru->user->update(['role' => $masihWalikelas ? 'walikelas' : 'guru']);
     }
 
     // Menampilkan form edit kelas

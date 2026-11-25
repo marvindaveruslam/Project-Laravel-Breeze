@@ -38,16 +38,26 @@ class LoginRequest extends FormRequest
      *
      * @throws ValidationException
      */
-    public function authenticate(): void
+    public function authenticate(array $roles = []): void
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $credentials = $this->only('email', 'password');
+
+        // Batasi login hanya untuk role yang sesuai dengan halaman login yang dipakai
+        if ($roles) {
+            $credentials['role_scope'] = fn ($query) => $query->whereIn('role', $roles);
+        }
+
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+            // Kredensial benar tapi salah pintu login -> beri petunjuk yang jelas
+            $message = ($roles && Auth::validate($this->only('email', 'password')))
+                ? 'Akun ini tidak dapat masuk lewat halaman ini. Gunakan halaman login yang sesuai dengan peran Anda.'
+                : trans('auth.failed');
+
+            throw ValidationException::withMessages(['email' => $message]);
         }
 
         RateLimiter::clear($this->throttleKey());
