@@ -1,360 +1,406 @@
 <script setup>
-import { Head, Link } from "@inertiajs/vue3";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue"; // Sesuaikan dengan layout Anda
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
+import { Head, Link, router, useForm } from "@inertiajs/vue3";
+import DashboardLayout from "@/Layouts/DashboardLayout.vue";
+import Swal from "sweetalert2";
 
-// Props dari Controller (misal: $siswas)
 const props = defineProps({
     siswas: {
         type: Object,
-        default: () => ({ data: [], links: [] }),
+        default: () => ({ data: [], current_page: 1, last_page: 1, total: 0 }),
     },
     stats: {
         type: Object,
         default: () => ({ total: 0, laki_laki: 0, perempuan: 0 }),
     },
+    filters: { type: Object, default: () => ({ search: "" }) },
+    flash: Object,
 });
 
-// State untuk pencarian (opsional)
-const search = ref("");
+// ---------------- Pencarian (server-side, debounce) ----------------
+const search = ref(props.filters?.search || "");
+let timer = null;
+watch(search, (val) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        router.get(
+            route("dashboard.siswa"),
+            { search: val || undefined },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    }, 400);
+});
 
-// Fungsi untuk hapus data (opsional)
-const deleteSiswa = (id) => {
-    if (confirm("Apakah Anda yakin ingin menghapus data ini?")) {
-        // Gunakan router.delete dari Inertia
-        // router.delete(route('siswa.destroy', id));
-        console.log("Hapus ID:", id);
+// ---------------- Pagination: jendela 10 nomor halaman ----------------
+const WINDOW = 10;
+const pageNumbers = computed(() => {
+    const current = props.siswas.current_page || 1;
+    const last = props.siswas.last_page || 1;
+    let start = Math.max(1, current - Math.floor(WINDOW / 2));
+    let end = start + WINDOW - 1;
+    if (end > last) {
+        end = last;
+        start = Math.max(1, end - WINDOW + 1);
     }
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+});
+
+const goToPage = (page) => {
+    if (
+        page < 1 ||
+        page > props.siswas.last_page ||
+        page === props.siswas.current_page
+    )
+        return;
+    router.get(
+        route("dashboard.siswa"),
+        { search: search.value || undefined, page },
+        {
+            preserveState: true,
+            preserveScroll: false,
+        },
+    );
 };
+
+// ---------------- Tambah siswa ----------------
+const showModal = ref(false);
+const form = useForm({
+    nis: "",
+    name: "",
+    gender: "L",
+    class: "",
+    homeroom_teacher: "",
+});
+
+const submit = () => {
+    form.post(route("dashboard.siswa.store"), {
+        onSuccess: () => {
+            showModal.value = false;
+            form.reset();
+        },
+    });
+};
+
+// ---------------- Notifikasi ----------------
+const Toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+});
+watch(
+    () => props.flash,
+    (f) => {
+        if (f?.success) Toast.fire({ icon: "success", title: f.success });
+        if (f?.error) Toast.fire({ icon: "error", title: f.error });
+    },
+    { immediate: true, deep: true },
+);
 </script>
 
 <template>
     <Head title="Data Siswa" />
 
-    <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Data Siswa
-            </h2>
-        </template>
+    <DashboardLayout title="Data Siswa">
+        <!-- Statistik -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div
+                class="bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+            >
+                <p class="text-sm font-medium text-gray-500">Total Siswa</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">
+                    {{ stats.total }}
+                </p>
+            </div>
+            <div
+                class="bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+            >
+                <p class="text-sm font-medium text-gray-500">Laki-laki</p>
+                <p class="text-2xl font-bold text-blue-600 mt-1">
+                    {{ stats.laki_laki }}
+                </p>
+            </div>
+            <div
+                class="bg-white p-6 rounded-lg shadow-sm border border-gray-100"
+            >
+                <p class="text-sm font-medium text-gray-500">Perempuan</p>
+                <p class="text-2xl font-bold text-pink-600 mt-1">
+                    {{ stats.perempuan }}
+                </p>
+            </div>
+        </div>
 
-        <div class="py-6">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <!-- Welcome Text -->
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-900">Data Siswa</h1>
-                    <p class="text-gray-500 mt-1">
-                        Selamat datang kembali, Administrator
+        <div
+            class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+        >
+            <div
+                class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4"
+            >
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">
+                        Daftar Siswa
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Menampilkan {{ siswas.from || 0 }}–{{
+                            siswas.to || 0
+                        }}
+                        dari {{ siswas.total || 0 }} siswa
                     </p>
                 </div>
-
-                <!-- Statistik Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div
-                        class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between"
+                <div class="flex items-center gap-3">
+                    <input
+                        v-model="search"
+                        type="text"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-64 p-2"
+                        placeholder="Cari nama, NIS, atau kelas..."
+                    />
+                    <button
+                        @click="showModal = true"
+                        class="text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2"
                     >
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">
-                                Total Siswa
-                            </p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">
-                                {{ stats.total }}
-                            </p>
-                            <p class="text-xs text-gray-400 mt-1">
-                                Semua siswa
-                            </p>
-                        </div>
-                        <div
-                            class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500"
-                        >
-                            <svg
-                                class="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                                ></path>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <div
-                        class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between"
-                    >
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">
-                                Laki-laki
-                            </p>
-                            <p class="text-2xl font-bold text-blue-600 mt-1">
-                                {{ stats.laki_laki }}
-                            </p>
-                            <p class="text-xs text-gray-400 mt-1">
-                                Siswa putra
-                            </p>
-                        </div>
-                        <div
-                            class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-500"
-                        >
-                            <svg
-                                class="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                ></path>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <div
-                        class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between"
-                    >
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">
-                                Perempuan
-                            </p>
-                            <p class="text-2xl font-bold text-pink-600 mt-1">
-                                {{ stats.perempuan }}
-                            </p>
-                            <p class="text-xs text-gray-400 mt-1">
-                                Siswa putri
-                            </p>
-                        </div>
-                        <div
-                            class="w-12 h-12 bg-pink-50 rounded-lg flex items-center justify-center text-pink-500"
-                        >
-                            <svg
-                                class="w-6 h-6"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                ></path>
-                            </svg>
-                        </div>
-                    </div>
+                        + Tambah Siswa
+                    </button>
                 </div>
+            </div>
 
-                <!-- Tabel Data Siswa -->
-                <div
-                    class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
-                >
-                    <div
-                        class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4"
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3">#</th>
+                            <th class="px-6 py-3">Nama</th>
+                            <th class="px-6 py-3">NIS</th>
+                            <th class="px-6 py-3">JK</th>
+                            <th class="px-6 py-3">Kelas</th>
+                            <th class="px-6 py-3">Walikelas</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-if="siswas.data.length === 0">
+                            <td
+                                colspan="8"
+                                class="px-6 py-4 text-center text-gray-500"
+                            >
+                                Belum ada data siswa.
+                            </td>
+                        </tr>
+                        <tr
+                            v-for="(s, index) in siswas.data"
+                            :key="s.id"
+                            class="bg-white border-b hover:bg-gray-50"
+                        >
+                            <td class="px-6 py-3">
+                                {{ (siswas.from || 1) + index }}
+                            </td>
+                            <td class="px-6 py-3">
+                                <Link
+                                    :href="route('dashboard.siswa.show', s.id)"
+                                    class="flex items-center gap-3"
+                                >
+                                    <span
+                                        class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold"
+                                    >
+                                        {{
+                                            (s.name || "?")
+                                                .charAt(0)
+                                                .toUpperCase()
+                                        }}
+                                    </span>
+                                    <span
+                                        class="font-medium text-gray-900 hover:text-blue-600"
+                                        >{{ s.name }}</span
+                                    >
+                                </Link>
+                            </td>
+                            <td class="px-6 py-3">{{ s.nis }}</td>
+                            <td class="px-6 py-3">
+                                {{
+                                    s.gender === "L" ? "Laki-laki" : "Perempuan"
+                                }}
+                            </td>
+                            <td class="px-6 py-3">
+                                <span
+                                    class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded"
+                                    >{{ s.class || "-" }}</span
+                                >
+                            </td>
+                            <td class="px-6 py-3">
+                                {{ s.homeroom_teacher || "-" }}
+                            </td>
+                            <td class="px-6 py-3">{{ s.status }}</td>
+                            <td class="px-6 py-3">
+                                <Link
+                                    :href="route('dashboard.siswa.show', s.id)"
+                                    class="text-blue-600 hover:text-blue-900 font-medium"
+                                >
+                                    Buka
+                                </Link>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div
+                v-if="siswas.last_page > 1"
+                class="p-4 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-3"
+            >
+                <p class="text-sm text-gray-500">
+                    Halaman {{ siswas.current_page }} dari
+                    {{ siswas.last_page }}
+                </p>
+                <div class="flex items-center gap-1 flex-wrap justify-center">
+                    <button
+                        @click="goToPage(siswas.current_page - 1)"
+                        :disabled="siswas.current_page === 1"
+                        class="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-gray-50"
                     >
-                        <div>
-                            <h3
-                                class="text-lg font-bold text-gray-900 flex items-center gap-2"
-                            >
-                                <svg
-                                    class="w-5 h-5 text-gray-500"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                    ></path>
-                                </svg>
-                                Daftar Siswa
-                            </h3>
-                            <p class="text-sm text-gray-500 mt-1">
-                                Menampilkan {{ siswas.data.length }} dari
-                                {{ siswas.total || 0 }} siswa
-                            </p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="relative">
-                                <div
-                                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
-                                >
-                                    <svg
-                                        class="w-4 h-4 text-gray-500"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                        ></path>
-                                    </svg>
-                                </div>
-                                <input
-                                    v-model="search"
-                                    type="text"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2"
-                                    placeholder="Cari nama, NIS, atau kelas..."
-                                />
-                            </div>
-                            <Link
-                                :href="route('siswa.create')"
-                                class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 flex items-center gap-2"
-                            >
-                                <svg
-                                    class="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 4v16m8-8H4"
-                                    ></path>
-                                </svg>
-                                Tambah Siswa
-                            </Link>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead
-                                class="text-xs text-gray-700 uppercase bg-gray-50"
-                            >
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">#</th>
-                                    <th scope="col" class="px-6 py-3">Nama</th>
-                                    <th scope="col" class="px-6 py-3">NIS</th>
-                                    <th scope="col" class="px-6 py-3">JK</th>
-                                    <th scope="col" class="px-6 py-3">Kelas</th>
-                                    <th scope="col" class="px-6 py-3">No HP</th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Dibuat
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-if="siswas.data.length === 0">
-                                    <td
-                                        colspan="8"
-                                        class="px-6 py-4 text-center text-gray-500"
-                                    >
-                                        Belum ada data siswa.
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-for="(siswa, index) in siswas.data"
-                                    :key="siswa.id"
-                                    class="bg-white border-b hover:bg-gray-50"
-                                >
-                                    <td class="px-6 py-4">{{ index + 1 }}</td>
-                                    <td
-                                        class="px-6 py-4 flex items-center gap-3"
-                                    >
-                                        <div
-                                            class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold"
-                                        >
-                                            {{
-                                                siswa.nama
-                                                    .charAt(0)
-                                                    .toUpperCase()
-                                            }}
-                                        </div>
-                                        <span
-                                            class="font-medium text-gray-900"
-                                            >{{ siswa.nama }}</span
-                                        >
-                                    </td>
-                                    <td class="px-6 py-4">{{ siswa.nis }}</td>
-                                    <td class="px-6 py-4">
-                                        {{
-                                            siswa.jenis_kelamin === "L"
-                                                ? "Laki-laki"
-                                                : "Perempuan"
-                                        }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span
-                                            class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded"
-                                            >{{
-                                                siswa.kelas?.nama_kelas || "-"
-                                            }}</span
-                                        >
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        {{ siswa.no_hp || "-" }}
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        {{
-                                            new Date(
-                                                siswa.created_at,
-                                            ).toLocaleDateString("id-ID", {
-                                                day: "numeric",
-                                                month: "long",
-                                                year: "numeric",
-                                            })
-                                        }}
-                                    </td>
-                                    <td class="px-6 py-4 flex gap-2">
-                                        <Link
-                                            :href="
-                                                route('siswa.edit', siswa.id)
-                                            "
-                                            class="text-blue-600 hover:text-blue-900"
-                                        >
-                                            <svg
-                                                class="w-5 h-5"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                ></path>
-                                            </svg>
-                                        </Link>
-                                        <button
-                                            @click="deleteSiswa(siswa.id)"
-                                            class="text-red-600 hover:text-red-900"
-                                        >
-                                            <svg
-                                                class="w-5 h-5"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                ></path>
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                        Previous
+                    </button>
+                    <button
+                        v-if="pageNumbers[0] > 1"
+                        @click="goToPage(1)"
+                        class="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50"
+                    >
+                        1 …
+                    </button>
+                    <button
+                        v-for="p in pageNumbers"
+                        :key="p"
+                        @click="goToPage(p)"
+                        class="px-3 py-1.5 text-sm border rounded-lg"
+                        :class="
+                            p === siswas.current_page
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'hover:bg-gray-50'
+                        "
+                    >
+                        {{ p }}
+                    </button>
+                    <button
+                        v-if="
+                            pageNumbers[pageNumbers.length - 1] <
+                            siswas.last_page
+                        "
+                        @click="goToPage(siswas.last_page)"
+                        class="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50"
+                    >
+                        … {{ siswas.last_page }}
+                    </button>
+                    <button
+                        @click="goToPage(siswas.current_page + 1)"
+                        :disabled="siswas.current_page === siswas.last_page"
+                        class="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                    >
+                        Next
+                    </button>
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+
+        <!-- Modal Tambah Siswa -->
+        <div
+            v-if="showModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+        >
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">
+                    Tambah Siswa
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-sm text-gray-600">NIS</label>
+                        <input
+                            v-model="form.nis"
+                            type="text"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                        />
+                        <p
+                            v-if="form.errors.nis"
+                            class="text-xs text-red-600 mt-1"
+                        >
+                            {{ form.errors.nis }}
+                        </p>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600"
+                            >Nama Lengkap</label
+                        >
+                        <input
+                            v-model="form.name"
+                            type="text"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                        />
+                        <p
+                            v-if="form.errors.name"
+                            class="text-xs text-red-600 mt-1"
+                        >
+                            {{ form.errors.name }}
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-sm text-gray-600"
+                                >Jenis Kelamin</label
+                            >
+                            <select
+                                v-model="form.gender"
+                                class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            >
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-sm text-gray-600">Kelas</label>
+                            <input
+                                v-model="form.class"
+                                type="text"
+                                class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-sm text-gray-600"
+                            >Nama Walikelas</label
+                        >
+                        <input
+                            v-model="form.homeroom_teacher"
+                            type="text"
+                            class="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                        />
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-5">
+                    <button
+                        @click="
+                            showModal = false;
+                            form.reset();
+                            form.clearErrors();
+                        "
+                        class="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        @click="submit"
+                        :disabled="form.processing"
+                        class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50"
+                    >
+                        Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </DashboardLayout>
 </template>

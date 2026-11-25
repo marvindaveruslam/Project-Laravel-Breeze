@@ -36,4 +36,16 @@ class Student extends Model
         // Menghubungkan ke model Grade
         return $this->hasMany(Grade::class);
     }
+
+    /**
+     * Relasi: Satu Siswa memiliki banyak catatan kehadiran.
+     */
+    public function attendances()
+    {
+        return $this->hasMany(StudentAttendance::class);
+    }
+
+    protected $casts = [
+        'birth_date' => 'date:Y-m-d',
+    ];
 }

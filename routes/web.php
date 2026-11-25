@@ -9,8 +9,7 @@ use App\Http\Controllers\KelasSantriController;
 use App\Http\Controllers\KelasGuruController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\MataPelajaranController;
-use App\Http\Controllers\SiswaController; // <-- Tambahan
-use App\Http\Controllers\CatatanSiswaController; // <-- Tambahan
+use App\Http\Controllers\SiswaController; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -46,14 +45,15 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
     route::get('classes/{id}/detail',[DashboardController::class,'detail'])->name('dashboard.detail');
 
    
+    // Modul Data Siswa
     Route::get('siswa', [SiswaController::class, 'index'])->name('dashboard.siswa');
-    
-    
-    Route::get('siswa/catatan', [CatatanSiswaController::class, 'index'])->name('dashboard.siswa.catatan');
-    
-    
     Route::post('siswa', [SiswaController::class, 'store'])->name('dashboard.siswa.store');
-    Route::post('siswa/catatan', [CatatanSiswaController::class, 'store'])->name('dashboard.siswa.catatan.store');
+    Route::get('siswa/{id}', [SiswaController::class, 'show'])->whereNumber('id')->name('dashboard.siswa.show');
+    Route::put('siswa/{id}', [SiswaController::class, 'update'])->whereNumber('id')->name('dashboard.siswa.update');
+    Route::put('siswa/{id}/nilai', [SiswaController::class, 'updateGrades'])->whereNumber('id')->name('dashboard.siswa.grades.update');
+    Route::delete('siswa/{id}/nilai/{gradeId}', [SiswaController::class, 'destroyGrade'])->whereNumber(['id', 'gradeId'])->name('dashboard.siswa.grades.destroy');
+    Route::post('siswa/{id}/kehadiran', [SiswaController::class, 'storeAttendance'])->whereNumber('id')->name('dashboard.siswa.attendance.store');
+    Route::delete('siswa/{id}/kehadiran/{attendanceId}', [SiswaController::class, 'destroyAttendance'])->whereNumber(['id', 'attendanceId'])->name('dashboard.siswa.attendance.destroy');
 
 });
 
