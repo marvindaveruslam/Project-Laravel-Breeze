@@ -23,29 +23,42 @@ Route::get('/', function () {
     ]);
 });
 
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-
+// ==========================================
+// RUTE DASHBOARD (PREFIX: /dashboard)
+// ==========================================
 Route::middleware('auth')->prefix('dashboard')->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('finance', [DashboardController::class, 'finance'])->name('dashboard.finance');
-    Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
     Route::get('santri', [DashboardController::class, 'santri'])->name('dashboard.santri');
     Route::get('guru', [DashboardController::class, 'guru'])->name('dashboard.guru');
-    Route::get('kelas/{kelas}/santri', [DashboardController::class, 'kelasSantri'])->name('dashboard.kelas_santri');
-    Route::get('kelas/{kelas}/guru', [DashboardController::class, 'kelasGuru'])->name('dashboard.kelas_guru');
     Route::get('absensi', [DashboardController::class, 'absensi'])->name('dashboard.absensi');
-    route::get('mata-pelajaran',[DashboardController::class,'mataPelajaran'])->name('dashboard.mata-pelajaran');
-    route::get('classes/{id}/detail',[DashboardController::class,'detail'])->name('dashboard.detail');
+    Route::get('mata-pelajaran', [DashboardController::class, 'mataPelajaran'])->name('dashboard.mata-pelajaran');
 
-   
-    // Modul Data Siswa
+    // --- MODUL KELAS DI DASHBOARD ---
+    Route::get('classes', [DashboardController::class, 'classes'])->name('dashboard.classes');
+    Route::get('classes/{kelas}/detail', [KelasController::class, 'show'])->name('dashboard.detail');
+    
+    // Rute untuk menyimpan guru/jadwal ke kelas
+    Route::post('classes/{kelas}/guru', [KelasController::class, 'storeGuru'])->name('classes.storeGuru');
+    
+    // Rute untuk menghapus jadwal guru dari kelas
+    Route::delete('classes/{kelas}/guru/{guruId}', [KelasController::class, 'destroyGuru'])->name('classes.destroyGuru');
+
+    // Rute untuk mengupdate Walikelas
+    Route::put('classes/{kelas}/walikelas', [KelasController::class, 'updateWalikelas'])->name('classes.updateWalikelas');
+
+    // Rute untuk mengupdate Jadwal Guru (Edit di samping Hapus)
+    // NAMA RUTE DISESUAIKAN DENGAN VUE: classes.updateGuru
+    Route::put('classes/{kelas}/guru/{guruId}', [KelasController::class, 'updateGuru'])->name('classes.updateGuru');
+
+    // --- MODUL SISWA ---
     Route::get('siswa', [SiswaController::class, 'index'])->name('dashboard.siswa');
     Route::post('siswa', [SiswaController::class, 'store'])->name('dashboard.siswa.store');
     Route::get('siswa/{id}', [SiswaController::class, 'show'])->whereNumber('id')->name('dashboard.siswa.show');
@@ -57,15 +70,19 @@ Route::middleware('auth')->prefix('dashboard')->group(function () {
 
 });
 
-
+// ==========================================
+// RUTE CRUD RESOURCE (Tanpa Prefix Dashboard)
+// ==========================================
 Route::middleware(['auth'])->group(function () {
-     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
+    Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas']);
     Route::resource('santri', SantriController::class);
-     Route::resource('guru', GuruController::class);
-     Route::resource('kelas/{kelas}/santri', KelasSantriController::class);
-     Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
-     Route::resource('absensi', AbsensiController::class);
-     Route::resource('mata-pelajaran', MataPelajaranController::class);
+    Route::resource('guru', GuruController::class);
+    Route::resource('absensi', AbsensiController::class);
+    Route::resource('mata-pelajaran', MataPelajaranController::class);
+    
+    // Rute Nested Resource
+    Route::resource('kelas/{kelas}/santri', KelasSantriController::class);
+    Route::resource('kelas/{kelas}/guru', KelasGuruController::class);
 });
 
 require __DIR__.'/auth.php';

@@ -7,32 +7,10 @@ import { Head } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
 
 const props = defineProps({
-    kelas: {
-        type: Object,
-        default: () => ({
-            id: 1,
-            nama_kelas: 'AI',
-            tingkat: '1'
-        })
-    },
-    pertemuan: {
-        type: Object,
-        default: () => ({
-            id: 1,
-            hari: 'Kamis',
-            jam_mulai: '12:30',
-            jam_selesai: '15:00',
-            ruang: 'Lab Saintek 1'
-        })
-    },
-    peserta: {
-        type: Array,
-        default: () => []
-    },
-    absensi: {
-        type: Array,
-        default: () => []
-    }
+    kelas: { type: Object, required: true },
+    pertemuan: { type: Object, required: true }, // Data dari pivot jadwal
+    peserta: { type: Array, default: () => [] },
+    absensi: { type: Array, default: () => [] } // Data absensi yang sudah ada (jika ada)
 });
 
 const Toast = Swal.mixin({
@@ -44,58 +22,24 @@ const Toast = Swal.mixin({
 });
 
 // ============================================
-// DATA DUMMY (jika tidak ada data dari backend)
-// ============================================
-
-// Data dummy peserta
-const dummyPeserta = [
-    { nim: '236250001', nama: 'Muh. Fauzi Taufiq' },
-    { nim: '236250004', nama: 'Andi Muhammad Yusuf Qadri' },
-    { nim: '236250005', nama: 'M. Alif Darul Firdaus' },
-    { nim: '236250010', nama: 'Muhammad Iqbal' },
-    { nim: '236250015', nama: 'Nailul Wafaaah' },
-    { nim: '236250025', nama: 'Muh. Fauzan Muqasith' },
-    { nim: '236250026', nama: 'Mohammad Ichsan' },
-    { nim: '236250027', nama: 'Vira Veriska I Ngadi' },
-    { nim: '236250028', nama: 'Abdul Razak' },
-    { nim: '236250029', nama: 'Nur Fadilah' },
-    { nim: '236250030', nama: 'Febianty' },
-    { nim: '236250032', nama: 'Adila Nurramadhan Mg Larase' },
-    { nim: '236250039', nama: 'Ghina Aghniya Khairunnisa' },
-    { nim: '236250043', nama: 'Mupida' },
-    { nim: '236250052', nama: 'Muammar Syakli Darmawan Djallo' },
-    { nim: '236250055', nama: 'Nursafira Kadar' },
-    { nim: '236250057', nama: 'Intan Salam' },
-];
-
-// Data dummy absensi
-const dummyAbsensi = [
-    { nim: '236250001', status: 'Hadir' },
-    { nim: '236250004', status: 'Hadir' },
-    { nim: '236250005', status: 'Hadir' },
-    { nim: '236250010', status: 'Hadir' },
-    { nim: '236250015', status: 'Hadir' },
-    { nim: '236250025', status: 'Hadir' },
-    { nim: '236250026', status: 'Hadir' },
-    { nim: '236250027', status: 'Izin' },
-    { nim: '236250028', status: 'Hadir' },
-    { nim: '236250029', status: 'Hadir' },
-    { nim: '236250030', status: 'Hadir' },
-    { nim: '236250032', status: 'Sakit' },
-    { nim: '236250039', status: 'Hadir' },
-    { nim: '236250043', status: 'Hadir' },
-    { nim: '236250052', status: 'Hadir' },
-    { nim: '236250055', status: 'Hadir' },
-    { nim: '236250057', status: 'Hadir' },
-];
-
-// ============================================
 // STATE REAKTIF
 // ============================================
-const pesertaList = ref(props.peserta.length ? props.peserta : dummyPeserta);
-const absensiList = ref(props.absensi.length ? props.absensi : dummyAbsensi);
+// Kita langsung pakai data dari props
+const pesertaList = ref(props.peserta);
 const isLoading = ref(false);
-const selectedStatus = ref({});
+
+// Menggabungkan data peserta dengan status absensi
+// Jika di database belum ada absensi, default-nya 'Hadir'
+const absensiList = ref(
+    props.peserta.map(p => {
+        const existing = props.absensi.find(a => a.santri_id === p.id || a.nis === p.nis);
+        return {
+            nis: p.nis,
+            santri_id: p.id,
+            status: existing ? existing.status : 'Hadir'
+        };
+    })
+);
 
 // ============================================
 // COMPUTED
@@ -123,40 +67,22 @@ const getStatusBadge = (status) => {
     return map[status] || 'bg-gray-100 text-gray-700';
 };
 
-const getStatusColor = (status) => {
-    const map = {
-        'Hadir': 'border-green-500 bg-green-50 hover:bg-green-100',
-        'Izin': 'border-yellow-500 bg-yellow-50 hover:bg-yellow-100',
-        'Sakit': 'border-blue-500 bg-blue-50 hover:bg-blue-100',
-        'Alpa': 'border-red-500 bg-red-50 hover:bg-red-100',
-    };
-    return map[status] || 'border-gray-500 bg-gray-50 hover:bg-gray-100';
-};
-
-const getStatusTextColor = (status) => {
-    const map = {
-        'Hadir': 'text-green-600',
-        'Izin': 'text-yellow-600',
-        'Sakit': 'text-blue-600',
-        'Alpa': 'text-red-600',
-    };
-    return map[status] || 'text-gray-600';
-};
-
 // ============================================
 // FUNGSI ABSENSI
 // ============================================
-const updateAbsensi = (nim, status) => {
-    const index = absensiList.value.findIndex(a => a.nim === nim);
+const updateAbsensi = (nis, status) => {
+    const index = absensiList.value.findIndex(a => a.nis === nis);
     if (index !== -1) {
         absensiList.value[index].status = status;
     } else {
-        absensiList.value.push({ nim, status });
+        absensiList.value.push({ nis, status });
     }
+    
+    const namaSantri = pesertaList.value.find(p => p.nis === nis)?.name || nis;
     
     Toast.fire({
         icon: 'success',
-        title: `✅ Status ${status} untuk ${pesertaList.value.find(p => p.nim === nim)?.nama || nim}`,
+        title: `✅ Status ${status} untuk ${namaSantri}`,
         timer: 2000
     });
 };
@@ -164,17 +90,29 @@ const updateAbsensi = (nim, status) => {
 const saveAllAbsensi = () => {
     isLoading.value = true;
     
-    // Simulasi simpan ke database
-    setTimeout(() => {
-        isLoading.value = false;
-        Toast.fire({
-            icon: 'success',
-            title: '📋 Semua data absensi berhasil disimpan!'
-        });
-        
-        // Redirect kembali ke halaman detail
-        router.visit(`/dashboard/classes/${props.kelas.id}/detail`);
-    }, 1000);
+    // Kirim data ke backend menggunakan Inertia router
+    // Pastikan rute 'absensi.store' sudah dibuat di web.php
+    router.post(route('absensi.store', props.pertemuan.id), {
+        absensi: absensiList.value
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isLoading.value = false;
+            Toast.fire({
+                icon: 'success',
+                title: '📋 Semua data absensi berhasil disimpan!'
+            });
+            // Kembali ke halaman detail kelas
+            router.visit(route('dashboard.detail', props.kelas.id));
+        },
+        onError: () => {
+            isLoading.value = false;
+            Toast.fire({
+                icon: 'error',
+                title: 'Gagal menyimpan data absensi.'
+            });
+        }
+    });
 };
 
 const resetAbsensi = () => {
@@ -190,7 +128,8 @@ const resetAbsensi = () => {
     }).then((result) => {
         if (result.isConfirmed) {
             absensiList.value = pesertaList.value.map(p => ({
-                nim: p.nim,
+                nis: p.nis,
+                santri_id: p.id,
                 status: 'Hadir'
             }));
             Toast.fire({
@@ -203,98 +142,94 @@ const resetAbsensi = () => {
 </script>
 
 <template>
-    <Head :title="`Absensi - ${props.kelas?.nama_kelas || 'Kelas'}`" />
+    <Head :title="`Absensi - ${kelas.nama_kelas}`" />
 
     <DashboardLayout 
-        :title="`📋 Absensi Kelas`"
-        :header-title="`Absensi - ${props.kelas?.nama_kelas || 'Kelas'}`"
-        :header-subtitle="`${props.pertemuan?.hari || ''} - ${props.pertemuan?.jam_mulai || ''} s/d ${props.pertemuan?.jam_selesai || ''}`"
+        title="Absensi Kelas"
+        :header-title="`Absensi - ${kelas.nama_kelas}`"
+        :header-subtitle="`${pertemuan?.hari || ''} - ${pertemuan?.jam_mulai || ''} s/d ${pertemuan?.jam_selesai || ''}`"
     >
         <!-- Breadcrumb -->
         <div class="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
-            <Link href="/dashboard/classes" class="hover:text-blue-600">Data Kelas</Link>
+            <Link :href="route('dashboard.classes')" class="hover:text-blue-600">Data Kelas</Link>
             <span>/</span>
-            <Link :href="`/dashboard/classes/${props.kelas.id}/detail`" class="hover:text-blue-600">
-                {{ props.kelas?.nama_kelas || 'Detail' }}
+            <Link :href="route('dashboard.detail', kelas.id)" class="hover:text-blue-600">
+                {{ kelas.nama_kelas }}
             </Link>
             <span>/</span>
-            <Link :href="`/dashboard/classes/${props.kelas.id}/detail?tab=absensi`" class="hover:text-blue-600">
-                Absensi
-            </Link>
-            <span>/</span>
-            <span class="text-gray-700 font-medium">Pertemuan {{ props.pertemuan?.id || 1 }}</span>
+            <span class="text-gray-700 font-medium">Absensi Pertemuan {{ pertemuan?.id }}</span>
         </div>
 
         <!-- Info Pertemuan -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500">Kelas</p>
-                <p class="text-sm font-semibold text-gray-800">{{ props.kelas?.nama_kelas || '-' }}</p>
+            <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <p class="text-xs text-gray-500 mb-1">Kelas</p>
+                <p class="text-sm font-semibold text-gray-900">{{ kelas.nama_kelas }}</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500">Hari</p>
-                <p class="text-sm font-semibold text-gray-800">{{ props.pertemuan?.hari || '-' }}</p>
+            <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <p class="text-xs text-gray-500 mb-1">Hari</p>
+                <p class="text-sm font-semibold text-gray-900">{{ pertemuan?.hari || '-' }}</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500">Waktu</p>
-                <p class="text-sm font-semibold text-gray-800">{{ props.pertemuan?.jam_mulai || '-' }} - {{ props.pertemuan?.jam_selesai || '-' }}</p>
+            <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <p class="text-xs text-gray-500 mb-1">Waktu</p>
+                <p class="text-sm font-semibold text-gray-900">{{ pertemuan?.jam_mulai || '-' }} - {{ pertemuan?.jam_selesai || '-' }}</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500">Ruang</p>
-                <p class="text-sm font-semibold text-gray-800">{{ props.pertemuan?.ruang || '-' }}</p>
+            <div class="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <p class="text-xs text-gray-500 mb-1">Mata Pelajaran</p>
+                <p class="text-sm font-semibold text-gray-900">{{ pertemuan?.mata_pelajaran || '-' }}</p>
             </div>
         </div>
 
         <!-- Statistik Absensi -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div class="bg-white rounded-lg p-4 border border-gray-100 text-center">
+            <div class="bg-white rounded-lg p-4 border border-gray-200 text-center shadow-sm">
                 <p class="text-2xl font-bold text-gray-800">{{ stats.total }}</p>
                 <p class="text-xs text-gray-500">Total Santri</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-green-200 text-center">
+            <div class="bg-white rounded-lg p-4 border border-green-200 text-center shadow-sm">
                 <p class="text-2xl font-bold text-green-600">{{ stats.hadir }}</p>
                 <p class="text-xs text-green-500">Hadir</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-yellow-200 text-center">
+            <div class="bg-white rounded-lg p-4 border border-yellow-200 text-center shadow-sm">
                 <p class="text-2xl font-bold text-yellow-600">{{ stats.izin }}</p>
                 <p class="text-xs text-yellow-500">Izin</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-blue-200 text-center">
+            <div class="bg-white rounded-lg p-4 border border-blue-200 text-center shadow-sm">
                 <p class="text-2xl font-bold text-blue-600">{{ stats.sakit }}</p>
                 <p class="text-xs text-blue-500">Sakit</p>
             </div>
-            <div class="bg-white rounded-lg p-4 border border-red-200 text-center">
+            <div class="bg-white rounded-lg p-4 border border-red-200 text-center shadow-sm">
                 <p class="text-2xl font-bold text-red-600">{{ stats.alpa }}</p>
                 <p class="text-xs text-red-500">Alpa</p>
             </div>
         </div>
 
         <!-- Tabel Absensi -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-gray-50">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-800">📋 Daftar Hadir Mahasiswa</h3>
+                    <h3 class="text-lg font-bold text-gray-900">📋 Daftar Hadir Santri</h3>
                     <p class="text-sm text-gray-500">Total: {{ pesertaList.length }} Santri</p>
                 </div>
                 <div class="flex gap-2 flex-wrap">
                     <button 
                         @click="resetAbsensi"
-                        :disabled="isLoading"
-                        class="px-4 py-2 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50"
+                        :disabled="isLoading || pesertaList.length === 0"
+                        class="px-4 py-2 text-sm font-medium bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
                     >
                         🔄 Reset
                     </button>
                     <button 
                         @click="saveAllAbsensi"
-                        :disabled="isLoading"
-                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
+                        :disabled="isLoading || pesertaList.length === 0"
+                        class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2 shadow-sm"
                     >
                         <div v-if="isLoading" class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                        💾 Simpan Semua
+                        💾 Simpan Absensi
                     </button>
                     <Link 
-                        :href="`/dashboard/classes/${props.kelas.id}/detail?tab=absensi`"
-                        class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                        :href="route('dashboard.detail', kelas.id)"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                     >
                         ← Kembali
                     </Link>
@@ -303,70 +238,74 @@ const resetAbsensi = () => {
 
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIM</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Mahasiswa</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">NIS</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama Santri</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <tr v-for="(peserta, idx) in pesertaList" :key="peserta.nim" class="hover:bg-gray-50">
+                        <tr v-if="pesertaList.length === 0">
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                                Belum ada santri di kelas ini.
+                            </td>
+                        </tr>
+                        <tr v-for="(santri, idx) in pesertaList" :key="santri.id" class="hover:bg-gray-50 transition">
                             <td class="px-4 py-3 text-gray-500 text-center">{{ idx + 1 }}</td>
-                            <td class="px-4 py-3 text-gray-700 font-mono text-xs">{{ peserta.nim }}</td>
-                            <td class="px-4 py-3 text-gray-800 font-medium">{{ peserta.nama }}</td>
+                            <td class="px-4 py-3 text-gray-700 font-mono text-xs">{{ santri.nis }}</td>
+                            <td class="px-4 py-3 text-gray-900 font-medium">{{ santri.name }}</td>
                             <td class="px-4 py-3">
-                                <span class="px-3 py-1 text-xs rounded-full font-medium" 
-                                      :class="getStatusBadge(absensiList.find(a => a.nim === peserta.nim)?.status || 'Hadir')">
-                                    {{ absensiList.find(a => a.nim === peserta.nim)?.status || 'Hadir' }}
+                                <span class="px-2.5 py-1 text-xs rounded-full font-medium" 
+                                      :class="getStatusBadge(absensiList.find(a => a.nis === santri.nis)?.status || 'Hadir')">
+                                    {{ absensiList.find(a => a.nis === santri.nis)?.status || 'Hadir' }}
                                 </span>
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex gap-1 flex-wrap">
+                                    <!-- Tombol Hadir -->
                                     <button 
-                                        @click="updateAbsensi(peserta.nim, 'Hadir')"
-                                        class="px-3 py-1 text-xs rounded border font-medium transition"
-                                        :class="absensiList.find(a => a.nim === peserta.nim)?.status === 'Hadir' 
+                                        @click="updateAbsensi(santri.nis, 'Hadir')"
+                                        class="px-2.5 py-1 text-xs rounded border font-medium transition"
+                                        :class="absensiList.find(a => a.nis === santri.nis)?.status === 'Hadir' 
                                             ? 'bg-green-500 text-white border-green-500' 
                                             : 'border-green-500 text-green-600 hover:bg-green-50'"
                                     >
                                         Hadir
                                     </button>
+                                    <!-- Tombol Izin -->
                                     <button 
-                                        @click="updateAbsensi(peserta.nim, 'Izin')"
-                                        class="px-3 py-1 text-xs rounded border font-medium transition"
-                                        :class="absensiList.find(a => a.nim === peserta.nim)?.status === 'Izin' 
+                                        @click="updateAbsensi(santri.nis, 'Izin')"
+                                        class="px-2.5 py-1 text-xs rounded border font-medium transition"
+                                        :class="absensiList.find(a => a.nis === santri.nis)?.status === 'Izin' 
                                             ? 'bg-yellow-500 text-white border-yellow-500' 
                                             : 'border-yellow-500 text-yellow-600 hover:bg-yellow-50'"
                                     >
                                         Izin
                                     </button>
+                                    <!-- Tombol Sakit -->
                                     <button 
-                                        @click="updateAbsensi(peserta.nim, 'Sakit')"
-                                        class="px-3 py-1 text-xs rounded border font-medium transition"
-                                        :class="absensiList.find(a => a.nim === peserta.nim)?.status === 'Sakit' 
+                                        @click="updateAbsensi(santri.nis, 'Sakit')"
+                                        class="px-2.5 py-1 text-xs rounded border font-medium transition"
+                                        :class="absensiList.find(a => a.nis === santri.nis)?.status === 'Sakit' 
                                             ? 'bg-blue-500 text-white border-blue-500' 
                                             : 'border-blue-500 text-blue-600 hover:bg-blue-50'"
                                     >
                                         Sakit
                                     </button>
+                                    <!-- Tombol Alpa -->
                                     <button 
-                                        @click="updateAbsensi(peserta.nim, 'Alpa')"
-                                        class="px-3 py-1 text-xs rounded border font-medium transition"
-                                        :class="absensiList.find(a => a.nim === peserta.nim)?.status === 'Alpa' 
+                                        @click="updateAbsensi(santri.nis, 'Alpa')"
+                                        class="px-2.5 py-1 text-xs rounded border font-medium transition"
+                                        :class="absensiList.find(a => a.nis === santri.nis)?.status === 'Alpa' 
                                             ? 'bg-red-500 text-white border-red-500' 
                                             : 'border-red-500 text-red-600 hover:bg-red-50'"
                                     >
                                         Alpa
                                     </button>
                                 </div>
-                            </td>
-                        </tr>
-                        <tr v-if="pesertaList.length === 0">
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
-                                Belum ada peserta kelas
                             </td>
                         </tr>
                     </tbody>

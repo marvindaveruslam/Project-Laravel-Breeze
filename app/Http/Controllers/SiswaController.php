@@ -12,7 +12,7 @@ use Inertia\Inertia;
 class SiswaController extends Controller
 {
     /**
-     * Daftar siswa dengan pencarian + pagination (100 baris/halaman).
+     * Daftar siswa dengan pencarian + pagination (10 baris/halaman).
      */
     public function index(Request $request)
     {
@@ -27,7 +27,7 @@ class SiswaController extends Controller
                 });
             })
             ->orderBy('name')
-            ->paginate(100)
+            ->paginate(10) // <-- DIUBAH DARI 100 MENJADI 10
             ->withQueryString();
 
         return Inertia::render('Dashboard/Siswa/Index', [
