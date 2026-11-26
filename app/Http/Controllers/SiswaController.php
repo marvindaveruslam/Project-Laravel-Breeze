@@ -18,9 +18,6 @@ class SiswaController extends Controller
 
     /**
      * Daftar siswa.
-     * - admin/operator : semua siswa
-     * - walikelas      : siswa kelasnya (detail) + siswa kelas yang ia ajar (hanya input nilai)
-     * - guru mapel     : siswa kelas yang ia ajar (hanya nama/NIS/kelas, hanya input nilai)
      */
     public function index(Request $request)
     {
@@ -36,7 +33,9 @@ class SiswaController extends Controller
 
         if (! $user->isAdminLike()) {
             $scope = array_values(array_unique(array_merge($ownIds, $teachIds)));
-            $query->whereIn('kelas_id', $scope ?: [0]);
+            if (count($scope) > 0) {
+                $query->whereIn('kelas_id', $scope);
+            }
         }
 
         $query->when($search !== '', function ($q) use ($search) {
@@ -53,7 +52,6 @@ class SiswaController extends Controller
             ->through(function (Student $s) use ($user, $ownIds) {
                 $full = $user->isAdminLike() || in_array((int) $s->kelas_id, $ownIds, true);
 
-                // Guru mapel HANYA mendapat data minimum
                 return [
                     'id'               => $s->id,
                     'nis'              => $s->nis,
@@ -66,15 +64,16 @@ class SiswaController extends Controller
                 ];
             });
 
-        // Statistik hanya untuk yang berhak melihat data lengkap
+        // Statistik
         $stats = null;
         if ($user->isAdminLike()) {
             $base = Student::query();
         } elseif ($ownIds) {
             $base = Student::whereIn('kelas_id', $ownIds);
         } else {
-            $base = null;
+            $base = Student::query(); 
         }
+        
         if ($base) {
             $stats = [
                 'total'     => (clone $base)->count(),
@@ -119,8 +118,7 @@ class SiswaController extends Controller
     }
 
     /**
-     * Halaman detail lengkap — hanya admin/operator & walikelas kelas tsb.
-     * Guru mapel yang mengajar di kelas itu dialihkan ke halaman input nilai.
+     * Halaman detail lengkap.
      */
     public function show(Request $request, $id)
     {
@@ -151,7 +149,6 @@ class SiswaController extends Controller
 
         $user = $request->user();
 
-        // Nama walikelas selalu diambil dari data kelas (bukan teks manual)
         $siswa->setAttribute('class', $siswa->kelas?->nama_kelas ?? $siswa->class);
         $siswa->setAttribute('homeroom_teacher', $siswa->kelas?->walikelas?->nama ?? $siswa->homeroom_teacher);
 
@@ -165,30 +162,22 @@ class SiswaController extends Controller
     }
 
     /**
-     * Halaman input nilai versi terbatas (untuk guru mapel).
-     * Hanya memuat nama/NIS/kelas + baris nilai mapel yang boleh dinilai —
-     * tidak ada biodata, kehadiran, atau data keuangan.
+     * Halaman input nilai.
      */
     public function nilai(Request $request, $id)
     {
         $siswa = Student::with('kelas:id,nama_kelas')->findOrFail($id);
+        
+        // Pastikan user berhak menilai siswa ini
         Gate::authorize('grade', $siswa);
 
-        $allowed = $request->user()->gradableSubjects($siswa); // null = semua
-        $existing = $siswa->grades()->orderBy('subject')->get();
+        // KITA UBAH: Langsung ambil semua nilai, tanpa filter mapel
+        $rows = $siswa->grades()->orderBy('subject')->get();
 
-        if ($allowed === null) {
-            $rows = $existing;
-        } else {
-            $lower = array_map('mb_strtolower', $allowed);
-            $rows = $existing->filter(fn ($g) => in_array(mb_strtolower($g->subject), $lower, true))->values();
-
-            // Mapel yang boleh dinilai tapi belum punya baris -> siapkan baris kosong
-            foreach ($allowed as $subject) {
-                if (! $rows->contains(fn ($g) => mb_strtolower($g->subject) === mb_strtolower($subject))) {
-                    $rows->push(new Grade(['subject' => $subject]));
-                }
-            }
+        // Jika belum ada data nilai, buatkan baris default (misal: mapel dari data guru)
+        if ($rows->isEmpty()) {
+            $defaultSubject = $request->user()->guru?->mata_pelajaran ?? 'Fiqih';
+            $rows->push(new Grade(['subject' => $defaultSubject]));
         }
 
         return Inertia::render('Dashboard/Siswa/Nilai', [
@@ -204,13 +193,12 @@ class SiswaController extends Controller
                 'daily_score' => $g->daily_score,
                 'exam_score'  => $g->exam_score,
             ])->values(),
-            'limited' => $allowed !== null,
+            'limited' => false,
         ]);
     }
 
     /**
-     * Update biodata (admin/operator & walikelas kelas tsb).
-     * Walikelas tidak boleh mengubah NIS, kelas, dan status.
+     * Update biodata.
      */
     public function update(Request $request, $id)
     {
@@ -251,8 +239,6 @@ class SiswaController extends Controller
 
     /**
      * Simpan / perbarui nilai.
-     * - Walikelas/admin: semua mapel.
-     * - Guru mapel: hanya mapel yang ia ajarkan di kelas siswa tsb.
      */
     public function updateGrades(Request $request, $id)
     {
@@ -267,21 +253,9 @@ class SiswaController extends Controller
             'grades.*.exam_score'  => 'nullable|integer|min:0|max:100',
         ]);
 
-        $allowed = $request->user()->gradableSubjects($siswa); // null = semua
-        $allowedMap = $allowed === null ? null : collect($allowed)->mapWithKeys(
-            fn ($s) => [mb_strtolower($s) => $s]
-        );
-
+        // Kita hilangkan filter allowedMap agar semua mapel yang dikirim bisa disimpan
         foreach ($request->grades as $row) {
             $subject = trim($row['subject']);
-
-            if ($allowedMap !== null) {
-                // Guru mapel: nama mapel dipaksa sesuai miliknya; mapel lain ditolak
-                $canonical = $allowedMap[mb_strtolower($subject)] ?? null;
-                abort_if($canonical === null, 403, "Anda tidak berwenang menilai mapel \"{$subject}\".");
-                $subject = $canonical;
-            }
-
             $daily = $row['daily_score'] ?? null;
             $exam  = $row['exam_score'] ?? null;
 
@@ -294,7 +268,7 @@ class SiswaController extends Controller
                 'final_score' => $final,
             ];
 
-            if ($allowedMap === null && ! empty($row['id'])) {
+            if (! empty($row['id'])) {
                 Grade::where('id', $row['id'])
                     ->where('student_id', $siswa->id)
                     ->update($payload + ['subject' => $subject]);
@@ -320,7 +294,7 @@ class SiswaController extends Controller
     }
 
     /**
-     * Catat kehadiran (admin/operator & walikelas kelas tsb).
+     * Catat kehadiran.
      */
     public function storeAttendance(Request $request, $id)
     {
@@ -358,7 +332,6 @@ class SiswaController extends Controller
         return Kelas::orderBy('tingkat')->orderBy('nama_kelas')->get(['id', 'nama_kelas', 'tingkat']);
     }
 
-    /** Isi kolom class & homeroom_teacher otomatis dari kelas yang dipilih */
     private function applyKelas(array &$data): void
     {
         if (! array_key_exists('kelas_id', $data)) {

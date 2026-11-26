@@ -7,6 +7,8 @@ use App\Models\Kelas;
 use App\Models\Guru;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\GuruKelasImport;
 
 class KelasController extends Controller
 {
@@ -205,5 +207,26 @@ class KelasController extends Controller
         return redirect()
             ->route('dashboard.classes')
             ->with('success', 'Data kelas berhasil dihapus.');
+    }
+
+    // ==========================================
+    // TAMBAHAN BARU: METHOD UNTUK IMPORT EXCEL
+    // ==========================================
+    public function import(Request $request)
+    {
+        // Validasi file yang diupload
+        $request->validate([
+            'file_excel' => 'required|mimes:xlsx,xls,csv|max:5120', // Maksimal 5MB
+        ]);
+
+        try {
+            // Menjalankan proses import menggunakan class GuruKelasImport
+            Excel::import(new GuruKelasImport, $request->file('file_excel'));
+            
+            return back()->with('success', 'Data Kelas, Guru, dan Jadwal berhasil diimport!');
+        } catch (\Exception $e) {
+            // Menangkap error jika format Excel salah atau ada masalah database
+            return back()->withErrors(['file_excel' => 'Terjadi kesalahan saat import: ' . $e->getMessage()]);
+        }
     }
 }

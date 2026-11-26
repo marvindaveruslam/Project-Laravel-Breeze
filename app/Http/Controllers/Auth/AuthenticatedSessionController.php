@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Auth/AuthenticatedSessionController.php
 
 namespace App\Http\Controllers\Auth;
 
@@ -13,7 +14,9 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
-    /** Role yang diizinkan untuk tiap pintu login */
+    /**
+     * Role yang diizinkan untuk tiap pintu login (portal).
+     */
     private const PORTAL_ROLES = [
         'admin'     => ['admin', 'operator'],
         'walikelas' => ['walikelas'],
@@ -21,10 +24,11 @@ class AuthenticatedSessionController extends Controller
     ];
 
     /**
-     * Display the login view (portal: admin | walikelas | guru).
+     * Menampilkan halaman login berdasarkan portal (admin | walikelas | guru).
      */
     public function create(string $portal = 'admin'): Response
     {
+        // Pastikan portal yang diminta valid, jika tidak kembalikan 404
         abort_unless(isset(self::PORTAL_ROLES[$portal]), 404);
 
         return Inertia::render('Auth/Login', [
@@ -35,16 +39,20 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Menangani proses autentikasi (login).
      */
     public function store(LoginRequest $request, string $portal = 'admin'): RedirectResponse
     {
+        // Pastikan portal valid sebelum memproses login
         abort_unless(isset(self::PORTAL_ROLES[$portal]), 404);
 
+        // Autentikasi user berdasarkan role yang diizinkan di portal tersebut
         $request->authenticate(self::PORTAL_ROLES[$portal]);
 
+        // Regenerasi session untuk mencegah serangan session fixation
         $request->session()->regenerate();
 
+        // Redirect berdasarkan role user yang berhasil login
         return match (auth()->user()->role) {
             'admin', 'operator' => redirect()->route('dashboard.index'),
             'walikelas', 'guru' => redirect()->route('dashboard.siswa'),
@@ -53,7 +61,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Destroy an authenticated session.
+     * Menghapus sesi autentikasi (logout).
      */
     public function destroy(Request $request): RedirectResponse
     {

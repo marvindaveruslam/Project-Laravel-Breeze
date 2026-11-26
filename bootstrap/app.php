@@ -16,8 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Daftarkan alias di sini
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'walikelas' => \App\Http\Middleware\WalikelasMiddleware::class, // <-- TAMBAHKAN INI
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -1,7 +1,7 @@
 <!-- resources/js/Pages/Dashboard/Classes/SingleClass.vue -->
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
+import { router, Link, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import Swal from 'sweetalert2';
@@ -56,11 +56,17 @@ const showModal = ref(false);
 const isEdit = ref(false);
 const currentId = ref(null);
 const isLoading = ref(false);
+const isImporting = ref(false);
 
-// Form data
+// Form data untuk Tambah/Edit Kelas
 const formData = ref({
     nama_kelas: '',
     tingkat: '',
+});
+
+// Form data untuk Import Excel
+const formImport = useForm({
+    file_excel: null,
 });
 
 // ============================================
@@ -105,7 +111,7 @@ const formatDate = (date) => {
 };
 
 // ============================================
-// FUNGSI CRUD
+// FUNGSI CRUD KELAS
 // ============================================
 const resetForm = () => {
     formData.value = {
@@ -232,6 +238,44 @@ const goToPage = (page) => {
 };
 
 // ============================================
+// FUNGSI IMPORT EXCEL
+// ============================================
+const handleFileChange = (e) => {
+    formImport.file_excel = e.target.files[0];
+};
+
+const submitImport = () => {
+    if (!formImport.file_excel) {
+        Toast.fire({
+            icon: 'warning',
+            title: '⚠️ Pilih file Excel terlebih dahulu!'
+        });
+        return;
+    }
+
+    isImporting.value = true;
+
+    formImport.post(route('classes.import'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            formImport.reset();
+            isImporting.value = false;
+            Toast.fire({
+                icon: 'success',
+                title: '✅ Data Excel berhasil diimport!'
+            });
+        },
+        onError: (errors) => {
+            isImporting.value = false;
+            Toast.fire({
+                icon: 'error',
+                title: errors.file_excel || '❌ Gagal mengimport data.'
+            });
+        }
+    });
+};
+
+// ============================================
 // WATCH
 // ============================================
 watch(() => props.kelas, (newData) => {
@@ -328,7 +372,25 @@ watch(() => props.flash, (newFlash) => {
                     <h3 class="text-lg font-semibold text-gray-800">📋 Daftar Kelas</h3>
                     <p class="text-sm text-gray-500">Menampilkan {{ filteredClasses.length }} dari {{ classes.length }} kelas</p>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-center">
+                    <!-- Form Import Excel -->
+                    <div class="flex items-center gap-2 bg-green-50 p-1.5 rounded-lg border border-green-200">
+                        <input 
+                            type="file" 
+                            @change="handleFileChange" 
+                            accept=".xlsx,.xls,.csv"
+                            class="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 cursor-pointer w-40"
+                        />
+                        <button 
+                            @click="submitImport"
+                            :disabled="isImporting || !formImport.file_excel"
+                            class="px-3 py-1.5 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                        >
+                            <svg v-if="isImporting" class="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            {{ isImporting ? 'Proses...' : 'Import' }}
+                        </button>
+                    </div>
+
                     <div class="relative">
                         <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -343,7 +405,7 @@ watch(() => props.flash, (newFlash) => {
                     <button 
                         @click="addClass"
                         :disabled="isLoading"
-                        class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1 disabled:opacity-50"
+                        class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-blue-700 transition flex items-center justify-center gap-1 disabled:opacity-50 whitespace-nowrap"
                     >
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
